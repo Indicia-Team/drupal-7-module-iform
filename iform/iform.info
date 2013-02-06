@@ -1,0 +1,8 @@
+; $Id$
+name = Indicia forms
+description = A node module allowing Indicia data entry forms to be created.
+core = 6.x
+package = "Indicia"
+dependencies[] = jquery_update
+dependencies[] = jquery_ui
+version = "6.x-1.1"

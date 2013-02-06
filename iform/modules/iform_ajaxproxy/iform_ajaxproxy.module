@@ -1,0 +1,294 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Adds write authentication to Inidica Ajax accesses, and wraps the post into the required format.
+ * @package iform_ajaxproxy
+ */
+
+define('IFORM_AJAXPROXY_PATH', variable_get('iform_ajaxproxy_path', 'ajaxproxy'));
+
+/* -----------------------------------------------------------------
+
+ Hook Implementations
+
+------------------------------------------------------------------ */
+
+/**
+ * Implementation of hook_perm();
+ */
+function iform_ajaxproxy_perm() {
+  return array('IForm AJAX Proxy passthrough');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function iform_ajaxproxy_menu(){
+  $items = array();
+
+  $items[IFORM_AJAXPROXY_PATH] = array(
+     'title' => 'Redirecting to your destination',
+     'page callback' => 'iform_ajaxproxy_proxy',
+     'access arguments' => array('access content'),
+     'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+
+/* -----------------------------------------------------------------
+
+ Public API
+
+------------------------------------------------------------------ */
+
+/**
+ * Provide a URL to be used for AJAX requests.
+ *
+ * @node string $url
+ *
+ * @index integer|string array index used to define how to process the post into an indicia format.
+ *
+ * @return string
+ *   A ready to be used url.
+ *
+ * @see iform_proxy_redirect()
+ */
+function iform_ajaxproxy_url($node, $index) {
+
+  // Build URL
+  $u = url(IFORM_AJAXPROXY_PATH, array('absolute' => TRUE,
+      query => array('node' => $node->nid,
+            'index' => $index)));
+  return $u;
+}
+
+/**
+ * Constructs proxy redirection based on the iform node.
+ * this is the function called when a request comes through the proxy.
+ *
+ */
+function iform_ajaxproxy_proxy() {
+  iform_load_helpers(array('data_entry_helper'));
+  
+  global $user;
+  // User #1 has all privileges:
+  if ($account->uid == 1) {
+    return TRUE;
+  }
+
+  $error=false;
+  // Not a proxied path
+  if (arg(0) != IFORM_AJAXPROXY_PATH) {
+    $error = t("proxy path mismatch");
+  } else if (!user_access('IForm AJAX Proxy passthrough')) {
+    if($user->uid == 0)
+      $error = t("Currently not logged in, and does not have permission to save data via the proxy.");
+    else
+      $error = t("User does not have permission to save data via the proxy.");
+  } else if (!$_POST) {
+    $error = t("no POST data.");
+  } else {
+    $nid = isset($_GET['node']) ? $_GET['node'] : NULL;
+    $index = isset($_GET['index']) ? $_GET['index'] : NULL;
+    // Sanity check
+    if (empty($index)){
+      $error = t("invocation format problem - no data format indicator.");
+    } else {
+      if (empty($nid))
+        $conn=array('website_id'=>variable_get('indicia_website_id',''), 'password'=>variable_get('indicia_password',''));
+      else {
+        $node = node_load($nid);
+        $conn = iform_get_connection_details($node);
+        if($node->type != 'iform') {
+          $error = t("Drupal node is not an iform node.");
+        }
+      }
+      // form type is held in $node->iform, but not relevant at this point.
+      //    require_once drupal_get_path('module', 'iform').'/client_helpers/prebuilt_forms/'.$node->iform.'.php';
+      $postargs = "website_id=".$conn['website_id'];
+      $response = data_entry_helper::http_post(data_entry_helper::$base_url.'/index.php/services/security/get_nonce', $postargs, false);
+      $nonce = $response['output'];
+      if(!array_key_exists('website_id', $_POST))
+        $error = t("Indicia website_id not provided in POST.");
+      else if($_POST['website_id'] != $conn['website_id'])
+        $error = t("Indicia website_id in POST does not match the stored website ID.");
+    }
+  }    
+  if($error){
+    echo "{error:\"iform_ajaxproxy Error: ".$error."\"}";
+    return;
+  }
+  switch ($index) {
+    case "sample":
+        $Model = data_entry_helper::wrap_with_attrs($_POST, 'sample');
+        break;
+    case "location":
+        $structure = array(
+          'model' => 'location'
+        );
+        // Only include website if in post data
+        if (array_key_exists('locations_website:website_id', $_POST)){
+          $structure['subModels']['locations_website'] = array('fk' => 'location_id');
+        }
+        $Model = data_entry_helper::build_submission($_POST, $structure);
+        break;
+    case "loc-sample":
+        $structure = array(
+          'model' => 'location',
+          'subModels' => array(
+              'sample' => array('fk' => 'location_id')
+          )
+      );
+      if(array_key_exists('locations_website:website_id', $_POST)){
+        $structure['subModels']['locations_website'] = array('fk' => 'location_id');
+      }
+      $Model = data_entry_helper::build_submission($_POST, $structure);
+        break;
+    case "loc-smp-occ":
+        $structure = array(
+          'model' => 'sample',
+          'subModels' => array(
+              'occurrence' => array('fk' => 'sample_id')
+          ),
+          'superModels' => array(
+              'location' => array('fk' => 'location_id')
+          )
+      );
+      $Model = data_entry_helper::build_submission($_POST, $structure);
+      foreach($_POST as $key=>$value){
+        if(substr($key,0,14) == 'determination:'){
+          $Model['subModels'][0]['model']['subModels'][] = array(
+          'fkId' => 'occurrence_id',
+          'model' => data_entry_helper::wrap($_POST, 'determination', 'determination')
+          );
+           break;
+        }
+      }
+        break;
+    case "smp-occ":
+        $structure = array(
+          'model' => 'sample',
+          'subModels' => array(
+              'occurrence' => array('fk' => 'sample_id')
+          )
+      );
+      $Model = data_entry_helper::build_submission($_POST, $structure);
+        break;
+    case "media":
+      // media handled differently. Submission is handled by the handle_media function.
+      // hardcode the auth into the $_Post array
+      $_POST['auth_token'] = sha1($nonce.":".$conn['password']);
+      $_POST['nonce'] = $nonce;
+      $media_id = 'upload_file';
+        // At the moment this only needs to handle a single media file at a time
+        $file = array();
+        if (array_key_exists($media_id, $_FILES)) { //there is a single upload field
+          if($_FILES[$media_id]['name'] != '') { //that field has a file
+            $file = $_FILES[$media_id];
+            $return = array();
+            $uploadpath = helper_config::$upload_path;
+            $target_url = helper_config::$base_url."/index.php/services/data/handle_media";
+            $name = $file['name'];
+            $fname = $file['tmp_name'];
+            $parts = explode(".",$name);
+            $fext = array_pop($parts);
+            // Generate a file id to store the image as
+            $destination = time().str_pad((string)rand(0,999),3,'0',STR_PAD_LEFT).".".$fext;
+            if (move_uploaded_file($fname, $uploadpath.$destination)) { //successfully stored locally - send to the warehouse
+              $postargs = array('name_is_guid' => 'true'); // we've done the time etc thing, so server doesn't need to.
+              if (array_key_exists('auth_token', $_POST)) $postargs['auth_token'] = $_POST['auth_token'];
+              if (array_key_exists('nonce', $_POST)) $postargs['nonce'] = $_POST['nonce'];
+              $file_to_upload = array('media_upload'=>'@'.realpath($uploadpath.$destination));
+              $response = data_entry_helper::http_post($target_url, $file_to_upload + $postargs);
+              $output = json_decode($response['output'], true);
+              if (is_array($output)) { //an array signals an error - attach the errors to the control that caused them
+                if (array_key_exists('error', $output)) {
+                  $return['error'] = $output['error'];
+                  if (array_key_exists('errors', $output)) $return['errors'][$media_id] = $output['errors']['media_upload'];
+                }
+              } else { //filenames are returned without structure - the output of json_decode may not be valid.
+                $exif = exif_read_data($uploadpath.$destination, 0, true);
+                if(!is_array($exif) || !isset($exif["IFD0"]) || !is_array($exif["IFD0"]))
+                  $exif = array("IFD0" => array());
+                if(!isset($exif["IFD0"]["Make"])) $exif["IFD0"]["Make"] = '';
+                if(!isset($exif["IFD0"]["Model"])) $exif["IFD0"]["Model"] = '';
+                if(!isset($exif["IFD0"]["DateTime"])) $exif["IFD0"]["DateTime"] = '';
+                $return['files'][] = array('filename' => $response['output'],
+                                           'EXIF_Camera_Make' => $exif["IFD0"]["Make"].' '.$exif["IFD0"]["Model"],
+                                           'EXIF_DateTime' => $exif["IFD0"]["DateTime"]);
+              }
+              unlink($uploadpath.$destination); //remove local copy
+            } else { //attach the errors to the control that caused them
+              $return['error'] = 'iform_ajaxproxy Error: Upload error';
+              $return['errors'][$media_id] = 'Sorry, there was a problem uploading this file - move failed.';
+            }
+          } else { //attach the errors to the control that caused them
+            $return['error'] = 'iform_ajaxproxy Error: Upload error';
+            $return['errors'][$media_id] = 'Sorry, no file present for "'.$media_id.'".';
+          }
+        } else {
+          $return['error'] = 'iform_ajaxproxy Error: Upload error';
+          $return['errors'][$media_id] = 'Sorry, "'.$media_id.'" not present in _FILES.';
+        }
+        //If no errors in the response array, all went well.
+        $return['success'] = !(array_key_exists('error', $return) || array_key_exists('errors', $return));
+        echo json_encode($return);
+        return;
+    case "occurrence":
+        $structure = array('model' => 'occurrence');
+        // Only include determination or comment record if determination in post
+        foreach($_POST as $key=>$value){
+          if(substr($key,0,14) == 'determination:'){
+            $structure['subModels'] = array('determination' => array('fk' => 'occurrence_id'));
+            break;
+          } elseif (substr($key,0,19) == 'occurrence_comment:'){
+            $structure['subModels'] = array('occurrence_comment' => array('fk' => 'occurrence_id'));
+            break;
+          }
+        }
+        $Model = data_entry_helper::build_submission($_POST, $structure);
+      break;
+    case "occ-comment":
+        $Model = data_entry_helper::wrap($_POST, 'occurrence_comment');
+      break;
+    case "smp-comment":
+        $Model = data_entry_helper::wrap($_POST, 'sample_comment');
+      break;
+    case "determination":
+        $Model = data_entry_helper::wrap($_POST, 'determination');
+      break;
+    case "notification":
+        $Model = data_entry_helper::wrap($_POST, 'notification');
+      break;
+    default:
+      echo "{error:\"iform_ajaxproxy Error: Current defined methods are: sample, location, loc-sample, loc-smp-occ, smp-occ, media, occurrence, occ-comment, smp-comment, determination, notification\"}";
+      // TODO invoke optional method in relevant iform prebuilt form to handle non standard indexes
+      // TODO? echo a failure response: invalid index type
+      return;
+  }
+  //
+  $request = data_entry_helper::$base_url."/index.php/services/data/save";
+  // postargs is handled as an array to allow proper handling of arguments: otherwise we would have to urlencode the model in case there is an ampersand etc in it...
+  // also removes URL size limits from the data sent.
+  $postargs = array('submission' => json_encode($Model),
+                    'auth_token' => sha1($nonce.":".$conn['password']),
+                    'nonce' => $nonce);
+  // pass through the user ID as this can then be used to set created_by and updated_by_ids
+  if (isset($_REQUEST['user_id']))
+    $postargs['user_id'] = $_REQUEST['user_id'];
+  if (isset($_REQUEST['sharing']))
+    $postargs['sharing'] = $_REQUEST['sharing'];
+  $postresponse = data_entry_helper::http_post($request, $postargs, false);
+  // the response array will always feature an output, which is the actual response or error message.
+  $response = $postresponse['output'];
+  // if it is not json format, assume error text, and json encode that.
+  if (!json_decode($response, true))
+      $response = "{error:\"".$response."\"}";
+  echo $response;
+}
+
+
