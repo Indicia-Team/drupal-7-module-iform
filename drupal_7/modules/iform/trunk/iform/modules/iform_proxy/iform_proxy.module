@@ -1,0 +1,277 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Adds username/password to map accesses.
+ * @package iform_proxy
+ */
+
+define('IFORM_PROXY_PATH', variable_get('iform_proxy_path', 'proxy'));
+
+/* -----------------------------------------------------------------
+
+ Hook Implementations
+
+------------------------------------------------------------------ */
+
+/**
+ * Implementation of hook_perm();
+ */
+function iform_proxy_perm() {
+  return array('IForm Proxy admin', 'IForm Proxy passthrough');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function iform_proxy_menu(){
+ $items = array();
+
+  $items[IFORM_PROXY_PATH] = array(
+     'title' => 'Redirecting to your destination',
+     'page callback' => 'iform_proxy_proxy',
+     'access arguments' => array('access content'),
+     'type' => MENU_CALLBACK,
+  );
+  $items['admin/settings/iform_proxy'] = array(
+    'title' => 'Indicia Proxy',
+    'description' => 'Main settings for Indicia Proxy.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('iform_proxy_admin_settings'),
+    'access arguments' => array('IForm Proxy admin'),
+    'type' => MENU_NORMAL_ITEM
+  );
+  $items['admin/settings/iform_proxy/settings'] = array(
+    'title' => 'Settings',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -20,
+  );
+
+  return $items;
+}
+
+/**
+ * Menu callback; displays the iform proxy module settings page.
+ *
+ * @see system_settings_form()
+ */
+function iform_proxy_admin_settings() {
+
+  // Define Form
+  $form['iform_proxy_username'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Indicia Proxy Service Account Username'),
+    '#description' => t('Default username that will be attached to all requests made to a proxied server.'),
+    '#default_value' => variable_get('iform_proxy_username', '')
+  );
+  $form['iform_proxy_password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Indicia Proxy Service Account Password'),
+    '#description' => t('Default password that will be attached to all requests made to a proxied server.'),
+    '#default_value' => variable_get('iform_proxy_password', '')
+  );
+  $form['iform_proxy_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Indicia Proxy Path'),
+    '#description' => t('Drupal path, excluding the site URL and ?q=, to the proxy location. The proxy can then be called at '.
+      '/?q=&lt;path&gt;&amp;url=&lt;url&gt; where &lt;url&gt; is the destination server URL.'),
+    '#default_value' => variable_get('iform_proxy_path', 'proxy')
+  );
+  $form['iform_proxy_logins'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Specific URL logins'),
+    '#description' => t('If you have specific destination URLs which need a custom username and password such as a different secured geoserver, then '.
+        'specify them here. Provide one per line in the form "url regex;username;password". For example, specify "/http[s]?:\/\/.+?\.com(\/.*)?/;user1;pwd1" to set the '.
+        'username and password to user1 and pwd1 for all .com URLs. If there are multiple matches, then the first in the list will take priority.'),
+    '#default_value' => variable_get('iform_proxy_logins', ''),
+    '#wysiwyg' => FALSE
+  );
+
+  // Make a system setting form and return
+  return system_settings_form($form);
+}
+
+/* -----------------------------------------------------------------
+
+ Public API
+
+------------------------------------------------------------------ */
+
+/**
+ * Proxy the URL passed.
+ *
+ * @param string $url
+ *
+ * @param array $options
+ *
+ * @return string
+ *   A re-built URL ready to be used in place of the provided url.
+ *
+ * @see iform_proxy_redirect()
+ */
+function iform_proxy_url($url, $options = array()) {
+
+  // Build URL
+  $u = url(IFORM_PROXY_PATH, array('absolute' => TRUE,
+      query => array('url' => $url,
+            'referer' => request_uri())));
+  $u .= (!empty($options) ? '&' . drupal_query_string_encode((array) $options) : '');
+  return $u;
+}
+
+/**
+ * Redirect to the URL passed.
+ *
+ * Generally you would not call this function, simply use
+ * iform_proxy_url() to create the proxied URLs. However if you must
+ * you can also programatically invoke the proxies via this function.
+ *
+ * @param string $url
+ *
+ * @param array $options
+ *
+ * @see iform_proxy_url()
+ */
+function iform_proxy_redirect($url, $options = array()) {
+  $postData = file_get_contents( "php://input" );
+  if (empty($postData))
+    $postData = $_POST;
+  if (!empty($url)) {
+    if(!user_access('IForm Proxy passthrough')) {
+      global $user;
+      watchdog('IForm Proxy', 'Access blocked because of permissions');
+      echo 'Access denied';
+      return;
+    }
+    // Fix scheme if needed
+    // Currently supports http only
+    if (strpos($url, 'http://') !== 0){
+      $url = 'http://' . $url;
+    }
+    $login = iform_proxy_get_login($url);
+    // load any previously cached long parameter values which are identified by CACHE_ID
+    if (isset($options['CACHE_ID'])) {
+      $cache = cache_get($options['CACHE_ID']);
+      $options = array_merge($cache->data, $options);
+    }
+    foreach($options as $key => $value){
+      switch($key) {
+        case 'referer' :
+        case 'url' :
+        case 'CACHE_ID' :
+          break;
+        default :
+          $url=$url.(strstr($url, "?") ? "&" : "?").$key."=".urlencode($value);
+      }
+    }
+    $session = curl_init($url);
+    // Set the POST options.
+    $httpHeader = array();
+
+    // Set the POST options.
+    if (!empty($postData)) {
+      curl_setopt($session, CURLOPT_POST, 1);
+      curl_setopt($session, CURLOPT_POSTFIELDS, $postData);
+      // post contains a raw XML document?
+      if (is_string($postData) && substr($postData, 0, 1)=='<') {
+        $httpHeader[]='Content-Type: text/xml';
+      }
+    }
+
+    if ($user != null && strlen($login['username'])>0 && $login['password'] != null && strlen($login['password'])>0) {
+      $httpHeader[]='Authorization: Basic '.base64_encode($login['username'].':'.$login['password']);
+    }
+    if (count($httpHeader)>0) {
+      curl_setopt($session, CURLOPT_HTTPHEADER, $httpHeader);
+    }
+
+    curl_setopt($session, CURLOPT_HEADER, false);
+    curl_setopt($session, CURLOPT_RETURNTRANSFER, true);
+
+    // Do the POST and then close the session
+    $response = curl_exec($session);
+    $headers = curl_getinfo($session);
+    if (curl_errno($session) || $headers['http_code']!==200) {
+      echo 'cUrl request failed. Please check cUrl is installed on the server.';
+      if (curl_errno($session))
+        echo 'Error number: '.curl_errno($session)."\n";
+      else
+        echo 'Headers returned HTTP '.$headers['http_code']."\n";
+      echo "Server response ";
+      echo $response;
+    } else {
+      if (strpos($headers['content_type'], '/')!==false)
+        header('Content-type: '.$headers['content_type']);
+      // @todo Check for charset and file download headers
+      echo $response;
+    }
+    curl_close($session);
+  } elseif (!empty($postData)) {
+    // calls to proxy with no url means that we are using the proxy to get around limitations
+    // in supported URL length in IE. For example, if using a WMS layer with a WFS or CQL filter
+    // based on a polygon, it is very easy to go over 2048 chars. So, we POST the long parameters
+    // to the proxy, which caches them and returns a cache identifier. Then the layer is loaded
+    // with a GET parameter for the cache identifier. The proxy swaps this cache identifier
+    // for the parameter in the cache adding them to the curl URL. As this is no longer
+    // sent from the browser, we are only limited by the webserver's supported URL length,
+    // which defaults to 8K on Apache, or 16k on IIS but is configurable.
+    // We allow for at least 2 hours in the cache
+    $id = uniqid('proxy');
+    cache_set($id, $postData, 'cache', time()+7200);
+    // send back the ID for future reference to the cached data
+    echo $id;
+  } else {
+    drupal_set_message(t('URL redirection is currently unavailable, please contact an administrator.'));
+    // If they tampered with referer... thats just to bad for them
+    drupal_goto($_GET['referer']);
+  }
+}
+
+/**
+ * Constructs proxy redirection based on the current path.
+ * this is the function called when a request comes through the proxy.
+ *
+ * @see iform_proxy_redirect()
+ */
+function iform_proxy_proxy() {
+  // Not a proxied path
+  if (arg(0) != IFORM_PROXY_PATH){
+    return;
+  }
+
+  // Build url, options, and module from path
+  $url = isset($_GET['url']) ? $_GET['url'] : NULL;
+  $options = $_GET;
+
+  unset($options['q'], $options['url']);
+  // Redirect and resume the processing phase
+  iform_proxy_redirect($url, $options);
+}
+
+/**
+ * Works out the login to use for a specific destination URL. Either the default, or
+ * returns the one configured for the specific URL regex.
+ */
+function iform_proxy_get_login($url) {
+  $loginDef = variable_get('iform_proxy_logins', '');
+  $structure = str_replace("\r\n", "\n", $loginDef);
+  $structure = str_replace("\r", "\n", $structure);
+  $loginList = explode("\n", trim($structure));
+  foreach($loginList as $login) {
+    $loginDef = explode(';', $login);
+    if (count($loginDef)===3) {
+      if (preg_match($loginDef[0], $url)) {
+        return array(
+          'username'=>$loginDef[1],
+          'password'=>$loginDef[2]
+        );
+      }
+    }
+  }
+  // no specific login, so use default
+  return array(
+    'username'=>check_plain(variable_get('iform_proxy_username', '')),
+    'password'=>check_plain(variable_get('iform_proxy_password', ''))
+  );
+}

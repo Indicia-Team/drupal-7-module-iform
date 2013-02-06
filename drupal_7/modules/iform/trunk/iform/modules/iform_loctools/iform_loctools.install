@@ -1,0 +1,42 @@
+<?php 
+// $Id$
+
+/**
+ * Implementation for hook_schema. Declares the table that is required for storing
+ * iform data.
+ */
+function iform_loctools_schema() {
+  $schema['iform_loctools'] = array(
+    'description' => 'Table required for storing user location allocations.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'The primary identifier for a node and therefore an iform instance.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'lid' => array(
+        'description' => 'The Indicia location ID.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'uid' => array(
+        'description' => 'The Drupal user id who is allocated the location.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+    ),
+    'primary key' => array('nid','lid','uid')
+  );
+  return $schema;
+}
+
+function iform_loctools_install() {
+  drupal_install_schema('iform_loctools');
+}
+
+function iform_loctools_uninstall() {
+  drupal_uninstall_schema('iform_loctools');
+}

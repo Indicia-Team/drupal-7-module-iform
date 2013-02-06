@@ -1,0 +1,95 @@
+<?php 
+// $Id$
+
+/**
+ * Implementation for hook_schema. Declares the table that is required for storing
+ * iform data.
+ */
+function iform_schema() {
+  $schema['iform'] = array(
+    'description' => 'Table required for storing Indicia prebuilt form parameters.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'The primary identifier for a node and therefore an iform instance.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'iform' => array(
+        'description' => 'Name of the prebuilt form that is linked to the node.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''
+      ),
+      'params' => array(
+        'description' => 'JSON structure containing parameters passed to the form on instantiation.',
+        'type' => 'text',        
+        'not null' => TRUE,
+      ),
+      'needs_review' => array(
+        'description' => 'Review state after node import. 0 indicates the node is not imported. '.
+            '1 indicates a node that is imported but has been reviewed. 2 indicates that the node '.
+            'is imported and site specific settings have been set - it just '.
+            'needs a final review. 3 indicates that this is a freshly imported form which may have some '.
+            'configuration parameters that are site specific and need review.',
+        'type' => 'int',
+        'not null' => true,
+        'default' => 0
+      )
+    ),
+    'primary key' => array('nid')
+  );
+  return $schema;
+}
+
+function iform_install() {
+  drupal_install_schema('iform');
+  // don't promote iforms to front page by default
+  variable_set('node_options_iform', array('status'));
+  // and default to no comments
+  variable_set('comment_iform', COMMENT_NODE_DISABLED);
+  // Don't display date and author information for page nodes by default.
+  $theme_settings = variable_get('theme_settings', array());
+  $theme_settings['toggle_node_info_iform'] = FALSE;
+  variable_set('theme_settings', $theme_settings);
+}
+
+function iform_uninstall() {
+  drupal_uninstall_schema('iform');
+  variable_del('indicia_website_id');
+  variable_del('indicia_password');
+  variable_del('indicia_allow_connection_override');
+  variable_del('indicia_base_url');
+  variable_del('indicia_geoserver_url');
+  variable_del('indicia_geoplanet_api_key');
+  // This variable is deprecated but might exist from pre 0.8 installs.
+  variable_del('indicia_google_search_api_key');
+  variable_del('indicia_map_centroid_lat');
+  variable_del('indicia_map_centroid_long');
+  variable_del('indicia_map_zoom');
+  variable_del('indicia_spatial_systems');
+}
+
+/**
+* Implementation of hook_update_N for version 6.x-1.0.
+* @return array Defines the results of the updates.
+*/
+function iform_update_6100() {
+  $ret = array();
+  db_change_field($ret, 'iform', 'iform', 'iform', array('type' => 'text', 'not null' => FALSE));
+  return $ret;
+}
+
+/**
+ * Implementation of hook_update_N for version 6.x-1.0.
+ * Adds the needs_review flag.
+ * @return array Defines the results of the updates.
+ */
+function iform_update_6110() {
+  $ret = array();
+  $schema = iform_schema();
+  $spec = $schema['iform']['fields']['needs_review'];
+  db_add_field($ret, 'iform', 'needs_review', $spec);
+  return $ret;
+}

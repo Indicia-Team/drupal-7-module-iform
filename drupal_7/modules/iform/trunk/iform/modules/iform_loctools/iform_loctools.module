@@ -1,0 +1,132 @@
+<?php
+// $Id$
+
+/**
+* Display help and module information
+* @param path which path of the site we're displaying help
+* @param arg array that holds the current path as would be returned from arg() function
+* @return help text for the path
+*/
+function iform_loctools_help($path, $arg) {
+  $output = '';  //declare your output variable
+  switch ($path) {
+    case "admin/help#iform_loctools":
+      $output = '<p>'.  t("Manages the user/location relatinoship for Indicia powered data entry forms.") .'</p>';
+      break;
+  }
+  return $output;
+} // function iform_help
+
+/**
+* Valid permissions for this module
+* @return array An array of valid permissions for the iform module
+*/
+function iform_loctools_perm() {
+  // permissions: admin allows a user to set the relationship
+  //              superuser allows a user access to all locations on a node.
+  //              user allows a user to be allocated a location on a node.
+  // It is assumed that all users may read the relationship between themselves and locations
+  //              
+  $retVal = array();
+  // Go through every IForm node.
+  //   Get the particular iform, add aadmin and superuser perms to return list
+  $results = db_query('SELECT n.nid, i.iform FROM {iform} i, {node} n WHERE i.nid = n.nid');
+  while($result = db_fetch_object($results)) {
+    $retVal[] = 'IForm loctools node '.$result->nid.' admin';
+    $retVal[] = 'IForm loctools node '.$result->nid.' superuser';
+    $retVal[] = 'IForm loctools node '.$result->nid.' user';
+  }
+  return $retVal;
+
+} // function iform_loctools_perm()
+
+// Functions required
+// 1) iform_loctools_listlocations
+//    return list of locations for a node/location combi. "all" - superuser, else array which may be empty.
+// 2) iform_loctools_listusers
+//	  return list of users which can be allocated a location.
+// 3) iform_loctools_setallocation
+//    allocate a location to a user.
+ 
+function iform_loctools_insertlocation($node, $uid, $lid) {
+  db_query("INSERT INTO {iform_loctools} (nid, uid, lid) VALUES (%d, %d, %d)", 
+      $node->nid, $uid, $lid);
+}
+
+/**
+* @param node object
+*/
+function iform_loctools_deletelocations($node) {   
+    db_query("DELETE FROM {iform_loctools} WHERE nid=%d", $node->nid);
+}
+
+/**
+* Implementation of hook_listlocations
+* @param node object to return locations IDs for.
+* @return array of location IDs or 'all'
+*/
+function iform_loctools_listlocations($node) {
+  global $user;
+  if(user_access('IForm loctools node '.$node->nid.' superuser')){
+  	return 'all';
+  }
+  $retVal = array();
+  $results = db_query('SELECT lid FROM {iform_loctools} WHERE nid = %d and uid = %d', $node->nid, $user->uid);
+  while($result = db_fetch_object($results)){
+		$retVal[] = $result->lid;
+  }
+  return $retVal;
+}
+
+/**
+* Implementation of hook_listusers
+* @param node object to return locations IDs for.
+* @return array of location IDs or 'all'
+*/
+function iform_loctools_listusers($node) {
+  $retVal = array();
+  $results = db_query('SELECT uid, name FROM {users}');
+  while($result = db_fetch_object($results)){
+  		$account = user_load($result->uid);
+		if($account->uid != 1 && user_access('IForm loctools node '.$node->nid.' user', $account)){
+			$retVal[$account->uid] = $account;
+		}
+  }
+  return $retVal;
+}
+
+/**
+* @param node object to return user ID for
+* @param location id to return user ID for.
+* @return array of user IDs
+*/
+function iform_loctools_getusers($node, $lid) {
+  $retVal = array();
+  $results = db_query('SELECT uid FROM {iform_loctools} WHERE nid = %d and lid = %d', $node->nid, $lid);
+  while($result = db_fetch_object($results)){
+    $retVal[] = $result->uid;
+  }
+  return $retVal;
+}
+
+/**
+* @param node object to return user ID for
+* @param location id to return user ID for.
+* @return user ID (singular) or -1
+*/
+function iform_loctools_getuser($node, $lid) {
+  $results = db_fetch_object(db_query('SELECT uid FROM {iform_loctools} WHERE nid = %d and lid = %d', $node->nid, $lid));
+  if(!is_null($results)){
+  	return $results->uid;
+  }
+  return -1;
+}
+
+/**
+* @param node object to return locations IDs for.
+* @return array of location IDs or 'all'
+*/
+function iform_loctools_checkaccess($node, $type) {
+  return user_access('IForm loctools node '.$node->nid.' '.$type);
+}
+
