@@ -1,16 +1,19 @@
 <?php
+/**
+* @file
+* Include file to define the admin interface for the iform module.
+*/
 
 /** 
  * A form definition for providing global condifuration options for Indicia. Used both in the installation 
  * profile as an install task, and provided on the admin menu.
  */
-function iform_configuration_form(&$form_state, $url='', $submit_handler='') {
-  iform_load_helpers(array('map_helper','data_entry_helper'));
-  $readAuth = data_entry_helper::get_read_auth(variable_get('indicia_website_id', 0), variable_get('indicia_password', ''));
-  drupal_add_js(drupal_get_path('module', 'iform').'/iform.admin.js');
-  global $indicia_warehouses;
+function iform_configuration_form($form, &$form_state, $url='', $submit_handler='') {
+  iform_load_helpers(array('map_helper', 'data_entry_helper'));
+  drupal_add_js(drupal_get_path('module', 'iform') . '/iform.admin.js');
+  global $_iform_warehouses;
   iform_load_warehouse_array();
-  foreach($indicia_warehouses as $warehouse=>$def) 
+  foreach ($_iform_warehouses as $warehouse => $def) 
     $warehouses[$warehouse] = $def['title'];
   $warehouses['other'] = t('Other');
   $form['indicia_warehouse'] = array(
@@ -24,15 +27,15 @@ function iform_configuration_form(&$form_state, $url='', $submit_handler='') {
   $form['other_warehouse'] = array(
     '#type' => 'fieldset',
     '#attributes' => array('id' => 'warehouse_details'),
-    '#collapsible' => true,
+    '#collapsible' => TRUE,
     '#collapsed' => variable_get('indicia_warehouse', '')!='other',
     '#title' => t('Other Warehouse Details')
   );
   $form['other_warehouse']['indicia_base_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Warehouse URL'),
-    '#description' => 'If selecting Other for the Indicia Warehouse option, please enter the URL of the Indicia Warehouse you are connecting to, otherwise ignore this setting. '.
-        'This should include the full path and trailing slash but not the index.php part, e.g. "http://www.mysite.com/indicia/".',
+    '#description' => t('If selecting Other for the Indicia Warehouse option, please enter the URL of the Indicia Warehouse you are connecting to, otherwise ignore this setting. ' .
+        'This should include the full path and trailing slash but not the index.php part, e.g. "http://www.mysite.com/indicia/".'),
     '#maxlength' => 255,
     '#required' => FALSE,
     '#default_value' => variable_get('indicia_base_url', ''),
@@ -40,7 +43,7 @@ function iform_configuration_form(&$form_state, $url='', $submit_handler='') {
   $form['other_warehouse']['indicia_geoserver_url'] = array(
     '#type' => 'textfield',
     '#title' => t('GeoServer URL'),
-    '#description' => t('If selecting Other for the Indicia Warehouse option, please enter the URL of the GeoServer instance you are connecting to, otherwise ignore this setting. '.
+    '#description' => t('If selecting Other for the Indicia Warehouse option, please enter the URL of the GeoServer instance you are connecting to, otherwise ignore this setting. ' .
         'This is optional, if not specified then you will not be able to use some of the advanced mapping facilities provided by GeoServer.'),
     '#maxlength' => 255,
     '#required' => FALSE,
@@ -49,17 +52,17 @@ function iform_configuration_form(&$form_state, $url='', $submit_handler='') {
   $form['indicia_private_warehouse'] = array(
     '#type' => 'checkbox',
     '#title' => t('Warehouse is private'),
-    '#description' => t('If your warehouse is not publicly visible (e.g. behind a firewall) then as long as it accepts requests from the IP address of the Drupal website\'s server '.
+    '#description' => t('If your warehouse is not publicly visible (e.g. behind a firewall) then as long as it accepts requests from the IP address of the Drupal website\'s server ' .
         'you can tick this box to send requests to the warehouse via a proxy on the Drupal server.'),
-    '#required' => false,
-    '#default_value' => variable_get('indicia_private_warehouse', false),
+    '#required' => FALSE,
+    '#default_value' => variable_get('indicia_private_warehouse', FALSE),
   );
   $form['indicia_allow_connection_override'] = array(
     '#type' => 'checkbox',
     '#title' => t('Allow website connection override'),
     '#description' => t('Tick this box to allow forms to override the specified website ID and password on an individual basis. This allows a single Drupal installation '.
         'to support forms which link to multiple Indicia website registrations. Leave unticked if you are not sure.'),
-    '#required' => false,
+    '#required' => FALSE,
     '#default_value' => variable_get('indicia_allow_connection_override', false),
   );
   $form['indicia_website_id'] = array(
@@ -72,16 +75,16 @@ function iform_configuration_form(&$form_state, $url='', $submit_handler='') {
     '#default_value' => variable_get('indicia_website_id', ''),
   );
   // require the password only if not previously set.
-  $pwdRequired = (variable_get('indicia_password', '')=='');
-  if ($pwdRequired)
-    $pwdDescription = t('Please enter the password specified when your website was registered on the Indicia Warehouse.');
+  $pwd_required = (variable_get('indicia_password', '')=='');
+  if ($pwd_required)
+    $pwd_description = t('Please enter the password specified when your website was registered on the Indicia Warehouse.');
   else
-    $pwdDescription = t('If you need to change it, enter the password specified when your website was registered on the Indicia Warehouse. '.
+    $pwd_description = t('If you need to change it, enter the password specified when your website was registered on the Indicia Warehouse. ' .
         'Otherwise leave the password blank to keep your previous settings.');
   $form['indicia_password'] = array(
     '#type' => 'password_confirm',
-    '#description' => $pwdDescription,
-    '#required' => $pwdRequired,
+    '#description' => check_plain($pwd_description),
+    '#required' => $pwd_required,
   );
   $form['api_keys'] = array(
     '#type' => 'fieldset',
@@ -90,9 +93,9 @@ function iform_configuration_form(&$form_state, $url='', $submit_handler='') {
   $form['api_keys']['indicia_geoplanet_api_key'] = array(
     '#type' => 'textfield',
     '#title' => t('GeoPlanet API Key'),
-    '#description' => t('The Yahoo! GeoPlanet API is one option to lookup place names when you use the place search control. '.
-        'It references a global database of places and returns the list of possibilities with their spatial references '.
-        'to Indicia. To obtain your own API key for GeoPlanet, please visit <a target="_blank" href="http://developer.yahoo.com/geo/geoplanet/">'.
+    '#description' => t('The Yahoo! GeoPlanet API is one option to lookup place names when you use the place search control. ' .
+        'It references a global database of places and returns the list of possibilities with their spatial references ' .
+        'to Indicia. To obtain your own API key for GeoPlanet, please visit <a target="_blank" href="http://developer.yahoo.com/geo/geoplanet/">' .
         'Yahoo! GeoPlanet</a> and follow the link to get an Application ID. '),
     '#required' => FALSE,
     '#default_value' => variable_get('indicia_geoplanet_api_key', helper_config::$geoplanet_api_key),
@@ -100,8 +103,8 @@ function iform_configuration_form(&$form_state, $url='', $submit_handler='') {
   $form['api_keys']['indicia_bing_api_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Bing API Key'),
-    '#description' => t('The Bing API key is required to allow use of Bing map layers but can be left blank if you do not intend '.
-        'to use Bing maps. To obtain your own key, please visit the <a target="_blank" href="http://www.bingmapsportal.com/">Bing Maps Account Center</a>. '.
+    '#description' => t('The Bing API key is required to allow use of Bing map layers but can be left blank if you do not intend ' .
+        'to use Bing maps. To obtain your own key, please visit the <a target="_blank" href="http://www.bingmapsportal.com/">Bing Maps Account Center</a>. ' .
         'Please ensure that you read and adhere to the <a href="http://www.microsoft.com/maps/product/terms.html">terms of use</a>.'),
     '#required' => FALSE,
     '#default_value' => variable_get('indicia_bing_api_key', ''),
@@ -111,20 +114,20 @@ function iform_configuration_form(&$form_state, $url='', $submit_handler='') {
     '#title' => t('Map Settings')
   );
   $form['map']['instruct'] = array(
-    '#value' => '<p>'.t('Pan and zoom this map to set the default map position for your survey input and mapping pages.').'</p>'
+    '#value' => '<p>' . t('Pan and zoom this map to set the default map position for your survey input and mapping pages.') . '</p>'
   );
   $form['map']['panel'] = array(
     '#value' => map_helper::map_panel(array(
       'width' => '100%',
       'height' => 500,
       'presetLayers' => array('osm'), 
-      'editLayer' => false,
+      'editLayer' => FALSE,
       'layers' => array(),
-      'initial_lat'=>variable_get('indicia_map_centroid_lat', 55),
-      'initial_long'=>variable_get('indicia_map_centroid_long', -1),
-      'initial_zoom'=>variable_get('indicia_map_zoom', 5),
-      'standardControls'=>array('panZoomBar'),
-      'scroll_wheel_zoom'=>'false'
+      'initial_lat' => variable_get('indicia_map_centroid_lat', 55),
+      'initial_long' => variable_get('indicia_map_centroid_long', -1),
+      'initial_zoom' => variable_get('indicia_map_zoom', 5),
+      'standardControls' => array('panZoomBar'),
+      'scroll_wheel_zoom' => 'false'
     ))
   );
   $form['map']['indicia_map_centroid_lat'] = array(
@@ -146,42 +149,42 @@ function iform_configuration_form(&$form_state, $url='', $submit_handler='') {
     '#tree' => true
   );
   $systems = array(
-      'OSGB'=>t('British National Grid'),
-      'OSIE'=>t('Irish National Grid'),
-      '4326'=>t('GPS Latitude and Longitude (WGS84)'),
-      'guernsey'=>t('Guernsey Grid'),
-      'jersey'=>t('Jersey Grid'),
-      'utm30n_ed50'=>t('UTM 30N (ED50)'),
-      'utm30n_wgs84'=>t('UTM 30N (WGS84)'),
-      '2169'=>t('LUREF Luxembourg')
+      'OSGB' => t('British National Grid'),
+      'OSIE' => t('Irish National Grid'),
+      '4326' => t('GPS Latitude and Longitude (WGS84)'),
+      'guernsey' => t('Guernsey Grid'),
+      'jersey' => t('Jersey Grid'),
+      'utm30n_ed50' => t('UTM 30N (ED50)'),
+      'utm30n_wgs84' => t('UTM 30N (WGS84)'),
+      '2169' => t('LUREF Luxembourg')
   );
-  $selectedSystems = _indicia_form_values_from_sref_systems($systems);
+  $selected_systems = _indicia_form_values_from_sref_systems($systems);
   $form['map']['spatial_ref_systems']['spatial_ref_systems_list'] = array(
     '#type' => 'checkboxes',
-    '#default_value' => $selectedSystems['list'],
+    '#default_value' => $selected_systems['list'],
     '#options' => $systems
   );
   $form['map']['spatial_ref_systems']['spatial_ref_systems_other'] = array(
     '#type' => 'textfield',
     '#title' => t('Other'),
-    '#default_value' => $selectedSystems['other'],
-    '#description' => t('For any system not in this list, you can enter a comma separated list of EPSG codes or other system names as long as they are '.
+    '#default_value' => $selected_systems['other'],
+    '#description' => t('For any system not in this list, you can enter a comma separated list of EPSG codes or other system names as long as they are ' .
         'recognised by the Indicia Warehouse you are using.')
   );
-  
-  // extra variables only visible after install, as they may need a website connection
+  // Add any module declared additional iform variables to the settings form. Extra variables only 
+  // visible after install, as they may need a website connection
   if (!defined('MAINTENANCE_MODE') || MAINTENANCE_MODE != 'install') {
     // Add any indicia variables declared by hook_variable_info
     global $language;
     $vars = module_invoke_all('variable_info', array("language" => $language));
-    $ctrls=array();
-    foreach ($vars as $var=>$config) {
-      $matches=array();
+    $ctrls = array();
+    foreach ($vars as $var => $config) {
+      $matches = array();
       if (isset($config['addToIndiciaSettingsPage']) && $config['addToIndiciaSettingsPage']) {
         if (isset($config['subtype']) && preg_match('/^termlists_term:(?P<list>.+)/', $config['subtype'], $matches))
-          $type='select';  
+          $type = 'select';  
         else
-          $type='textfield';
+          $type = 'textfield';
         $ctrls[$var] = array(
           '#type'=>$type,
           '#title'=>$config['title'],
@@ -190,14 +193,14 @@ function iform_configuration_form(&$form_state, $url='', $submit_handler='') {
         );
         if (isset($matches['list'])) {
           $rows = data_entry_helper::get_population_data(array(
-            'table'=>'termlists_term',
-            'extraParams'=>$readAuth + array('termlist_external_key'=>'indicia:'.$matches['list'])
+            'table' => 'termlists_term',
+            'extraParams' => $readAuth + array('termlist_external_key' => 'indicia:' . $matches['list'])
           ));
-          $options = array(''=>t('<please select>'));
+          $options = array('' => t('<please select>'));
           foreach ($rows as $row) {
-            $options[$row['id']]=$row['term'];
+            $options[$row['id']] = $row['term'];
           }
-          $ctrls[$var]['#options']=$options;
+          $ctrls[$var]['#options'] = $options;
         }
       }
     }
@@ -252,14 +255,14 @@ function indicia_configuration_form_validate($form, &$form_state) {
     // test the connection to the warehouse
     $urls = indicia_get_warehouse_urls($form_state);
     data_entry_helper::$base_url = $urls['base_url'];
-    $readAuth = data_entry_helper::get_read_auth($form_state['values']['indicia_website_id'], $form_state['values']['indicia_password']);
+    $read_auth = data_entry_helper::get_read_auth($form_state['values']['indicia_website_id'], $form_state['values']['indicia_password']);
     $test = data_entry_helper::get_population_data(array(
-      'table'=>'survey',
-      'extraParams'=>$readAuth + array('limit'=>0),
-      'nocache'=>true
+      'table' => 'survey',
+      'extraParams' => $read_auth + array('limit' => 0),
+      'nocache' => true
     ));
     if (isset($test['error']))
-      form_set_error('indicia_website_id', t('The configuration for the connection to the warehouse is incorrect. This could be an incorrect '.
+      form_set_error('indicia_website_id', t('The configuration for the connection to the warehouse is incorrect. This could be an incorrect ' .
           'or unavailable Indicia Warehouse, an incorrect Indicia Website ID or Password.'));
   }
   $systems = _indicia_sref_systems_from_form($form_state['values']);
@@ -274,7 +277,7 @@ function indicia_configuration_form_validate($form, &$form_state) {
 function _indicia_sref_systems_from_form($values) {
   $arr = array();
   // convert the form value array into a simple array of enabled items
-  foreach($values['spatial_ref_systems']['spatial_ref_systems_list'] as $sys=>$enabled) {
+  foreach ($values['spatial_ref_systems']['spatial_ref_systems_list'] as $sys => $enabled) {
     if ($enabled) {
       $arr[] = $sys;
     }
@@ -309,13 +312,13 @@ function _indicia_form_values_from_sref_systems($systems) {
 
 
 function indicia_configuration_form_submit($form, &$form_state) {
-  $origWarehouseUrl = variable_get('indicia_base_url', '');
+  $orig_warehouse_url = variable_get('indicia_base_url', '');
   variable_set('indicia_warehouse', $form_state['values']['indicia_warehouse']);
   $urls = indicia_get_warehouse_urls($form_state);
   variable_set('indicia_base_url', $urls['base_url']);
   variable_set('indicia_geoserver_url', $urls['geoserver_url']);
   // clear the cache if the linked warehouse changes
-  if ($origWarehouseUrl !== $urls['base_url'])
+  if ($orig_warehouse_url !== $urls['base_url'])
     data_entry_helper::clear_cache();
   variable_set('indicia_private_warehouse', $form_state['values']['indicia_private_warehouse']);
   variable_set('indicia_allow_connection_override', $form_state['values']['indicia_allow_connection_override']);
@@ -345,17 +348,18 @@ function indicia_configuration_form_submit($form, &$form_state) {
 function indicia_get_warehouse_urls($form_state) {
   if (strcasecmp($form_state['values']['indicia_warehouse'], t('Other'))===0) {
     return array(
-      'base_url'=>$form_state['values']['indicia_base_url'],
-      'geoserver_url'=>$form_state['values']['indicia_geoserver_url']
+      'base_url' => $form_state['values']['indicia_base_url'],
+      'geoserver_url' => $form_state['values']['indicia_geoserver_url']
     );
-  } else {
-    global $indicia_warehouses;
+  } 
+  else {
+    global $_iform_warehouses;
     iform_load_warehouse_array();
-    foreach($indicia_warehouses as $warehouse=>$def) {
+    foreach ($_iform_warehouses as $warehouse => $def) {
       if ($warehouse==$form_state['values']['indicia_warehouse']) {
         return array(
-          'base_url'=>$def['base_url'],
-          'geoserver_url'=>$def['geoserver_url']
+          'base_url' => $def['base_url'],
+          'geoserver_url' => $def['geoserver_url']
         );
       }
     }
@@ -363,13 +367,13 @@ function indicia_get_warehouse_urls($form_state) {
 }
 
 /**
- * Utility function to populate the list of warehouses in the global $indicia_warehouses. Each warehouse is loaded from an .inc
+ * Utility function to populate the list of warehouses in the global $_iform_warehouses. Each warehouse is loaded from an .inc
  * file in the warehouses sub-folder.
  */
 function iform_load_warehouse_array() {
-  global $indicia_warehouses;
-  $indicia_warehouses = array();
-  foreach(glob(drupal_get_path('module', 'iform') . '/warehouses/*.inc') as $warehouse_file) {
+  global $_iform_warehouses;
+  $_iform_warehouses = array();
+  foreach (glob(drupal_get_path('module', 'iform') . '/warehouses/*.inc') as $warehouse_file) {
     require($warehouse_file);
   }
 }
