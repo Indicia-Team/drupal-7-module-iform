@@ -1,4 +1,9 @@
 <?php 
+/**
+* @file
+* Defines the configuration for a predefined link to a localhost warehouse running in a
+* development environment.
+*/
 
 global $_iform_warehouses;
 

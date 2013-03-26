@@ -7,7 +7,7 @@ if (!defined('PHP_VERSION_ID')) {
 
     define('PHP_VERSION_ID', ($version[0] * 10000 + $version[1] * 100 + $version[2]));
 }
-
+  
 /**
 * Display help and module information
 * @param path which path of the site we're displaying help
@@ -147,7 +147,7 @@ function iform_node_access($node, $op, $account=NULL) {
     // check if this form has per-node view access control
     $results = db_query("SELECT nid FROM {iform} WHERE nid=" . $node->nid . " AND (params like '%\"view_access_control\":1%' " .
           "OR params like '%\"view_access_control\":\"1\"%')");
-    if (db_affected_rows($results)>0) {
+    if (count($results)>0) {
       // Use a per node setting to control access. Use default permission name iform access <nid>, or specified one from params if available
       if (!empty($node->params['permission_name']))
         return user_access($node->params['permission_name']);
@@ -197,17 +197,16 @@ function iform_form(&$node, $form_state) {
   // this by setting their weights, but another module might add elements to the
   // form with the same weights and end up between ours. By putting them into a
   // sub-array together, we're able force them to be rendered together.
-  $defaultValue = isset($node->body) ? $node->body : null;
-  $format = isset($node->format) ? $node->format : null;
-  $iform = isset($node->iform) ? $node->iform : null;
+  $defaultValue = isset($node->body['value']) ? $node->body['value'] : NULL;
+  $format = isset($node->format) ? $node->format : NULL;
+  $iform = isset($node->iform) ? $node->iform : NULL;
   $form['body'] = array(
     '#type' => 'text_format',
-    '#base_type' => 'textarea',
+    '#format' => $format,
     '#title' => check_plain($type['iform']->body_label),
     '#default_value' =>  $defaultValue,
     '#rows' => 10,
-    '#required' => FALSE,
-    '#format' => $format,
+    '#required' => FALSE
   );
   
 
@@ -241,7 +240,7 @@ function iform_form(&$node, $form_state) {
   } 
   else {
     $form['iform_forms']['form-params'] = array(
-      '#value' => ' ', // must be a space or Drupal drops the div
+      '#markup' => ' ', // must be a space or Drupal drops the div
       '#prefix' => '<div id="form-params">',
       '#suffix' => '</div>'
     );
@@ -294,8 +293,12 @@ function iform_insert($node) {
   else
     $iform = $node->iform;
   $needs_review = isset($node->needs_review) ? $node->needs_review : 0;
-  db_query("INSERT INTO {iform} (nid, iform, params, needs_review) VALUES (:nid, ':form', ':params', :nr)",
-      array(':nid' => $node->nid, ':form' => $iform, ':params' => $params, ':nr' => $needs_review));
+  db_insert('iform')
+    ->fields(array('nid' => $node->nid,
+        'iform' => $iform,
+        'params' => $params,
+        'needs_review' => $needs_review))
+    ->execute();
 }
 
 /**
@@ -319,8 +322,14 @@ function iform_update($node) {
   }
   else
     $params=get_custom_param_values($node);
-  db_query("UPDATE {iform} SET iform=':form', params=':params', needs_review=:nr WHERE nid=:nid",
-      array(':form' => $iform, ':params' => $params, ':nr' => $needs_review, ':nid' => $node->nid));
+  db_update('iform')
+      ->fields(array(
+        'iform'=>$iform,
+        'params'=>$params,
+        'needs_review'=>$needs_review
+      ))
+      ->condition('nid', $node->nid)
+      ->execute();
 }
 
 /**
@@ -340,10 +349,12 @@ function iform_delete($node) {
 function iform_load($nodes) {
   foreach ($nodes as &$node) {
     $qry = db_query('SELECT iform, params, needs_review FROM {iform} WHERE nid = :nid', array(':nid' => $node->nid));
+    
     unset($node->params);
     $node->params = array();
     foreach ($qry as $record) {
       $params=json_decode($record->params, TRUE);
+      $node->iform = $record->iform;
       // null string is stored if the iform has no parameters to store
       if ($record->params!=='null') {
         if (!is_array($params))
@@ -364,14 +375,14 @@ function iform_menu() {
   $items = array();
   $items['admin/config/iform'] = array(
     'title' => 'IForm',
-    'description' => t('Configuration for the IForm module.'),
+    'description' => 'Configuration for the IForm module.',
     'page callback' => 'iform_settings',
     'access arguments' => array('create iform'),
     'position' => 'right'
   );
   $items['admin/config/iform/settings'] = array(
-    'title' => t('Settings'),
-    'description' => t('Settings page for the IForm module.'),
+    'title' => 'Settings',
+    'description' => 'Settings page for the IForm module.',
     'page callback' => 'iform_settings',
     'access arguments' => array('create iform'),
     'type' => MENU_NORMAL_ITEM,
@@ -379,8 +390,8 @@ function iform_menu() {
   );
   // Create a tab to display the admin panel.
   $items['admin/config/iform/admin'] = array(
-    'title' => t('IForm Admin Tasks'),
-    'description' => t('Administration tasks for the IForm module.'),
+    'title' => 'IForm Admin Tasks',
+    'description' => 'Administration tasks for the IForm module.',
     'page callback' => 'iform_admin_tasks',
     'access arguments' => array('create iform'),
     'type' => MENU_NORMAL_ITEM,
@@ -388,17 +399,17 @@ function iform_menu() {
   );
   // Create a tab to display the diagnostics panel.
   $items['admin/config/iform/diagnostics'] = array(
-    'title' => t('IForm Diagnostics'),
-    'description' => t('Run a configuration check for the IForm module.'),
+    'title' => 'IForm Diagnostics',
+    'description' => 'Run a configuration check for the IForm module.',
     'page callback' => 'iform_diagnostics',
     'access arguments' => array('create iform'),
     'type' => MENU_NORMAL_ITEM,
     'weight' => 2
   );
   $items['admin/build/features/indicia'] = array(
-    'title' => t('Review IForm Features'),
-    'description' => t('After installing a feature containing Indicia forms, use this page to configure any ' .
-        'site specific settings for the forms.'),
+    'title' => 'Review IForm Features',
+    'description' => 'After installing a feature containing Indicia forms, use this page to configure any ' .
+        'site specific settings for the forms.',
     'page callback' => 'iform_features_review',
     'access arguments' => array('create iform'),
     'type' => MENU_LOCAL_TASK,
@@ -452,7 +463,12 @@ function iform_features_review() {
   drupal_set_title(t('Review Indicia Features'));
   if (isset($_POST['form-works'])) {
     // acknowledging a form that needs review, but there are no settings to review
-    db_query('UPDATE {iform} SET needs_review=1 WHERE nid=:nid', array(':nid' => $_POST['form-works']));
+    db_update('iform')
+        ->fields(array(
+          'needs_review' => 1
+        ))
+        ->condition('nid', $_POST['form-works'])
+        ->execute();
   } 
   elseif (isset($_POST['form-settings'])) {
     // saving site specific settings for a form. Merge the new params into the existing ones
@@ -509,7 +525,7 @@ function iform_features_review() {
   }
   $r .= "</form>";
   if ($gotSomething) {
-    drupal_add_js('misc/collapse.js');
+    hostsite_add_library('collapse');
     if ($gotForms) {
       form_helper::add_resource('defaultStylesheet');
       handle_resources();
@@ -567,7 +583,7 @@ function iform_settings() {
  * @param $page
  * @return unknown_type
  */
-function iform_view($node, $teaser = FALSE, $page = FALSE) {
+function iform_view($node, $view_mode) {
   drupal_page_is_cacheable(FALSE);
   iform_load_helpers(array('data_entry_helper', 'form_helper'));
   if (iform_check_needs_review($node)) {
@@ -580,7 +596,7 @@ function iform_view($node, $teaser = FALSE, $page = FALSE) {
     $r = t('This form has been added by enabling an Indicia Feature but its configuration needs to be reviewed before use.') .
         ' ' . $msg;
     $node->content['myfield']=array(
-      '#value' => $r,
+      '#markup' => $r,
       '#weight' => 1
     );
     return $node;
@@ -696,7 +712,7 @@ $('.ui-state-default').live('mouseout', function() {
     } catch (Exception $e) {
       watchdog('debug', 'Error occurred loading form');
       watchdog('debug', $e->getMessage());
-      watchdog('trace', print_r($e->getTrace(), true));
+      watchdog('trace', print_r($e->getTrace(), TRUE));
       $r =  $e->getMessage();
     }
 
@@ -730,7 +746,7 @@ $('.ui-state-default').live('mouseout', function() {
 
     ob_end_clean();
     $node->content['myfield']=array(
-      '#value' => $r,
+      '#markup' => $r,
       '#weight' => 1
     );
   }
@@ -805,7 +821,57 @@ function handle_resources() {
           // We must not add jQuery twice. So for this file, add Drupal's own version if not already done.
           if (strcasecmp(substr($j, -9), 'jQuery.js')==0) {
             // No need to load jquery.js in Drupal 7 as it loads automatically if there is any other JavaScript
-            // drupal_add_js('misc/jquery.js', 'core');
+          }
+          elseif (strcasecmp(substr($j, -23), 'jquery-ui.custom.min.js')==0) {
+            hostsite_add_library('jquery-ui');
+          }
+          elseif (substr($j, 0, 4)=='[IE]') {
+            drupal_add_html_head("<!--[if IE]><script type=\"text/javascript\" src=\"" . substr($j, 4) . "\"></script><![endif]-->\n");
+          }
+          elseif (substr($j, 0, 4)=='http') {
+            // JS file external to Drupal. add_js will not work, so insert it into the head manually.
+            drupal_add_js($j, 'external');
+          } 
+          elseif (strcasecmp(substr($j, -20), 'jquery-ui.effects.js')!=0) {
+            // JS file within Drupal structure. Drupal will add base_path() to the beginning as it expects a relative path not absolute
+            $j = preg_replace('/^' . str_replace('/', '\/', base_path()) . '/', '', $j);
+            drupal_add_js($j, array('type' => 'file', 'weight' => JS_DEFAULT));
+          }
+        }
+      }
+    }
+  }
+  data_entry_helper::setup_jquery_validation_js();
+  $script = data_entry_helper::get_scripts(data_entry_helper::$javascript, data_entry_helper::$late_javascript, data_entry_helper::$onload_javascript);
+  if (!empty($script))
+    drupal_add_js(iform_js_closure($script), 'inline');
+  // in case there are 2 iforms on one page
+  data_entry_helper::$javascript = '';
+  data_entry_helper::$late_javascript = '';
+  data_entry_helper::$onload_javascript = '';
+}
+
+function iform_get_form_resource_attachments() {
+  require_once iform_client_helpers_path() . 'data_entry_helper.php';
+  $r = array('js' => array());//, 'css'=>array());
+  $jsWeight = 0;
+  if (isset(data_entry_helper::$required_resources)) {
+    $resourceList = data_entry_helper::get_resources();
+    foreach (data_entry_helper::$required_resources as $resource) {
+      if (isset($resourceList[$resource]['stylesheets'])) {
+        foreach ($resourceList[$resource]['stylesheets'] as $s) {
+          $s = preg_replace('/^' . str_replace('/', '\/', base_path()) . '/', '', $s);
+          drupal_add_css($s);
+        }
+      }
+      if (isset($resourceList[$resource]['javascript'])) {
+        foreach ($resourceList[$resource]['javascript'] as $j) {
+          // if enabling fancybox, link it up
+          if (strpos($j, 'fancybox.')!==FALSE)
+            data_entry_helper::$javascript .= "jQuery('a.fancybox').fancybox();\n";
+          // We must not add jQuery twice. So for this file, add Drupal's own version if not already done.
+          if (strcasecmp(substr($j, -9), 'jQuery.js')==0) {
+            // No need to load jquery.js in Drupal 7 as it loads automatically if there is any other JavaScript
           }
           elseif (strcasecmp(substr($j, -23), 'jquery-ui.custom.min.js')==0) {
             drupal_add_library('system', 'jquery-ui');
@@ -815,25 +881,39 @@ function handle_resources() {
           }
           elseif (substr($j, 0, 4)=='http') {
             // JS file external to Drupal. add_js will not work, so insert it into the head manually.
+            // THIS WORKS NOW?
             drupal_add_html_head("<script type='text/javascript' src='$j'></script>");
           } 
           elseif (strcasecmp(substr($j, -20), 'jquery-ui.effects.js')!=0) {
             // JS file within Drupal structure. Drupal will add base_path() to the beginning as it expects a relative path not absolute
             $j = preg_replace('/^' . str_replace('/', '\/', base_path()) . '/', '', $j);
-            drupal_add_js($j, array('type' => 'module', 'weight' => JS_DEFAULT));
+            $r['js'][] = array('data' => $j, 'weight' => $jsWeight);
+            $jsWeight++;
           }
         }
       }
     }
   }
   data_entry_helper::setup_jquery_validation_js();
-  drupal_add_js(data_entry_helper::get_scripts(data_entry_helper::$javascript, data_entry_helper::$late_javascript, data_entry_helper::$onload_javascript), 'inline');
+  $script = data_entry_helper::get_scripts(data_entry_helper::$javascript, data_entry_helper::$late_javascript, data_entry_helper::$onload_javascript);
+  if (!empty($script))
+    $r['js'][] = array('data' => iform_js_closure($script), 'type' => 'inline', 'weight' => $jsWeight);
   // in case there are 2 iforms on one page
   data_entry_helper::$javascript = '';
   data_entry_helper::$late_javascript = '';
   data_entry_helper::$onload_javascript = '';
+  return $r;
 }
 
+/**
+ * Adds a jQuery closure around a piece of JavaScript for D7 compatibility.
+ * @param type $js 
+ */
+function iform_js_closure($js) {
+  return "(function ($) {
+$js
+})(jQuery);";
+}
 /**
  * Menu callback that displays a page allowing the administrator to perform indicia administration tasks, such
  * as clearing the cache.
@@ -890,7 +970,7 @@ function iform_check_helper_config_exists() {
 function iform_load_language_files($node) {
   global $language, $custom_terms, $custom_term_overrides;
   $moduleLangFilePath = iform_client_helpers_path() . "prebuilt_forms/lang/";
-  $siteSpecificLangFilePath = file_create_path("iform/client_helpers/prebuilt_forms/lang/");
+  $siteSpecificLangFilePath = drupal_get_path('module', 'iform') . '/client_helpers/prebuilt_forms/lang/';
   $formLangFileName = $node->iform . '.' . $language->language . '.php';
   $nodeLangFileName = 'node.' . $node->nid . '.' . $language->language . '.php';
   $formFallbackFileName = $node->iform . '.en.php';
@@ -939,11 +1019,10 @@ function iform_load_helpers(array $files) {
   $path = iform_client_helpers_path();
   // we always need the helper_config file
   if (!class_exists('helper_config')) {
-    require_once $path.'helper_config.php';
+    require_once $path . 'helper_config.php';
     // now we have an opportunity to load settings into helper_config from the drupal variables.
     helper_config::$base_url = variable_get('indicia_base_url', helper_config::$base_url);
     helper_config::$geoserver_url = variable_get('indicia_geoserver_url', helper_config::$geoserver_url);
-    // upload_path
     // cache_folder
     // interim_image_folder
     // final_image_folder
@@ -1042,15 +1121,19 @@ function iform_client_helpers_path() {
 /**
  * Function that allows Indicia code to hook into the Drupal user profile to find out a field value, without
  * introducing a Drupal code dependency.
- * @param string $field Name of a profile field, e.g. indicia_user_id as introduced by the Easy Login feature. This will be converted
+ * @param string $field Name of a user field to return. This can be 'language' which returns a user's 2 character language code, 
+ * or a profile field, e.g. indicia_user_id as introduced by the Easy Login feature. This will be converted
  * to the profile field name if not prefixed with 'profile_'.
  * @param mixed $default Default value to return if not set. */
 function hostsite_get_user_field($field, $default=FALSE) {
   if (!module_exists('profile'))
     return $default;
   global $user;
+  if ($field==='language')
+    return $user->language;
   $fieldname = "profile_$field";
-  $exists = db_query("SELECT count(*) FROM {profile_fields} WHERE name='$fieldname'")->fetchField();
+  $exists = db_query("SELECT count(*) FROM {profile_fields} WHERE name=':name'",
+      array(':name' => $fieldname))->fetchField();
   if (!$exists)
     return $default;
   if ($user->uid) {
@@ -1082,13 +1165,46 @@ function hostsite_set_user_field($field, $data) {
     $fieldname = "profile_$field";
     //this call is not cached, so only do it once
     profile_load_profile($user);
-    $r = db_query("SELECT fid FROM {profile_fields} WHERE name=\"$fieldname\"")->fetchField();
-    db_query("DELETE FROM {profile_values} WHERE fid = %d AND uid = %d", $r['fid'], $user->uid);
-    db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $r['fid'], $user->uid, $data);
-    return true;
+    $r = db_query("SELECT fid FROM {profile_fields} WHERE name=':name'", 
+        array(':name'=>$fieldname))->fetchField();
+    db_delete('profile_values')
+        ->condition('fid', $r['fid'])
+        ->condition('uid', $user->uid)
+        ->execute();
+    db_insert('profile_values')
+        ->fields(array(
+          'fid' => $r['fid'],
+          'uid' => $user->uid,
+          'values' => $data
+        ))
+        ->execute();
+    return TRUE;
   } 
   else {
-    return false;
+    return FALSE;
+  }
+}
+
+/**
+ * Enable a library in rhw host website.
+ * @param string $library Name of the library. The following are supported:
+ * 
+ * collapse - To enable collapsible fieldsets. Requires the class collapsible to be added to a fieldset.
+ * jquery-ui - Adds the jQuery ui library with tab and datepicker support.
+ */
+function hostsite_add_library($library) {
+  switch ($library) {
+    case 'collapse':
+      drupal_add_library('system', 'drupal.collapse');
+      break;
+    case 'jquery-ui':
+      drupal_add_library('system', 'jquery-ui');
+      drupal_add_library('system', 'ui.datepicker');
+      drupal_add_library('system', 'ui.tabs');
+      drupal_add_library('system', 'ui.progressbar');
+      break;
+    default: 
+      watchdog('iform', "Unknown library requested: $library");
   }
 }
 

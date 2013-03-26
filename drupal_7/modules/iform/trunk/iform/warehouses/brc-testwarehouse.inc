@@ -1,4 +1,8 @@
 <?php 
+/**
+* @file
+* Defines a predefined configuration for a link to the BRC test warehouse.
+*/
 
 global $_iform_warehouses;
 
