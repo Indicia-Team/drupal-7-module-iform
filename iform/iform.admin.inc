@@ -10,7 +10,6 @@
  */
 function iform_configuration_form($form, &$form_state, $url='', $submit_handler='') {
   iform_load_helpers(array('map_helper', 'data_entry_helper'));
-  drupal_add_js(drupal_get_path('module', 'iform') . '/iform.admin.js');
   global $_iform_warehouses;
   iform_load_warehouse_array();
   foreach ($_iform_warehouses as $warehouse => $def) 
@@ -114,10 +113,10 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
     '#title' => t('Map Settings')
   );
   $form['map']['instruct'] = array(
-    '#value' => '<p>' . t('Pan and zoom this map to set the default map position for your survey input and mapping pages.') . '</p>'
+    '#markup' => '<p>' . t('Pan and zoom this map to set the default map position for your survey input and mapping pages.') . '</p>'
   );
   $form['map']['panel'] = array(
-    '#value' => map_helper::map_panel(array(
+    '#markup' => map_helper::map_panel(array(
       'width' => '100%',
       'height' => 500,
       'presetLayers' => array('osm'), 
@@ -131,14 +130,17 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
     ))
   );
   $form['map']['indicia_map_centroid_lat'] = array(
+    '#attributes'=>array('id'=>'edit-indicia-map-centroid-lat'),
     '#type' => 'hidden',
     '#default_value' => variable_get('indicia_map_centroid_lat', 55),
   );
   $form['map']['indicia_map_centroid_long'] = array(
+    '#attributes'=>array('id'=>'edit-indicia-map-centroid-long'),
     '#type' => 'hidden',
     '#default_value' => variable_get('indicia_map_centroid_long', -1),
   );
   $form['map']['indicia_map_zoom'] = array(
+    '#attributes'=>array('id'=>'edit-indicia-map-zoom'),
     '#type' => 'hidden',
     '#default_value' => variable_get('indicia_map_zoom', 6),
   );
@@ -244,7 +246,8 @@ mapInitialisationHooks.push(function(div) {
   });
 });
 ";
-  handle_resources();
+  $form['#attached'] = iform_get_form_resource_attachments();
+  $form['#attached']['js'][] = array('data'=>drupal_get_path('module', 'iform').'/iform.admin.js');
   return $form;
 }
 
