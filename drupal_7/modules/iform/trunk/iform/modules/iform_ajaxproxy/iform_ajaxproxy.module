@@ -61,7 +61,7 @@ function iform_ajaxproxy_url($node, $index) {
 
   // Build URL
   $u = url(IFORM_AJAXPROXY_PATH, array('absolute' => TRUE,
-      query => array('node' => $node->nid,
+      query => array('node' => $node===null ? '' : $node->nid,
             'index' => $index)));
   return $u;
 }
