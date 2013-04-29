@@ -1,5 +1,5 @@
 ; $Id$
 name = Indicia AJAX Proxy
 description = A module required to proxy of AJAX calls to Indicia services.
-core = 6.x
+core = 7.x
 package = "Indicia"
