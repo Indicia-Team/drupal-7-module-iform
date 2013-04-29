@@ -16,10 +16,12 @@ define('IFORM_AJAXPROXY_PATH', variable_get('iform_ajaxproxy_path', 'ajaxproxy')
 ------------------------------------------------------------------ */
 
 /**
- * Implementation of hook_perm();
+ * Implementation of hook_permission();
  */
-function iform_ajaxproxy_perm() {
-  return array('IForm AJAX Proxy passthrough');
+function iform_ajaxproxy_permission() {
+  return array(
+    'IForm AJAX Proxy passthrough'=>array('title'=>t('IForm AJAX Proxy passthrough'))
+  );
 }
 
 /**
