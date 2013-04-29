@@ -33,17 +33,15 @@ function iform_help($path, $arg) {
 function iform_permission() {
   $retVal = array(
     'access iform' => array(
-      'title' => t('Replace this title1'),
-      'description' => t('Replace this description1')), 
-    'create iform' => array(
-      'title' => t('Replace this title2'),
-      'description' => t('Replace this description2')), 
-    'edit iform' => array(
-      'title' => t('Replace this title3'),
-      'description' => t('Replace this description3')), 
-    'edit own iform' => array(
-      'title' => t('Replace this title4'),
-      'description' => t('Replace this description4')));
+      'title' => t('Access Indicia Iform web pages'), 
+    ), 'create iform' => array(
+      'title' => t('Create IForm web pages')
+    ), 'edit iform' => array(
+      'title' => t('Edit any IForm web pages')
+    ), 'edit own iform' => array(
+      'title' => t('Edit own IForm web pages')
+    )
+   );
   // Go through every IForm node.
   //   Get the particular iform, check if it has a perms method.
   //   if yes, call it and add to the return list
@@ -54,7 +52,8 @@ function iform_permission() {
       require_once iform_client_helpers_path() . 'prebuilt_forms/' . $result->iform . '.php';
       if (method_exists('iform_' . $result->iform, 'get_perms')) {
         $perms = call_user_func(array('iform_' . $result->iform, 'get_perms'), $result->nid);
-        $retVal = array_merge($retVal, $perms);
+        foreach($perms as $perm)
+          $retVal[$perm] = array('title'=>t($perm));
       }
     }
   }
@@ -64,9 +63,9 @@ function iform_permission() {
   foreach ($results as $result) {
     $params = json_decode($result->params, TRUE);
     if (!empty($params['permission_name']))
-      $retVal[] = $params['permission_name'];
+      $retVal[$params['permission_name']] = array('title'=>t($params['permission_name']));
     else
-      $retVal[] = 'access iform ' . $result->nid;
+      $retVal['access iform ' . $result->nid] = array('title'=>t('access iform %id', array('%id' => $result->nid)));
   }
   return $retVal;
 
@@ -1119,33 +1118,29 @@ function iform_client_helpers_path() {
 }
 
 /**
- * Function that allows Indicia code to hook into the Drupal user profile to find out a field value, without
+ * Function that allows Indicia code to hook into the Drupal user fields to find out a field value, without
  * introducing a Drupal code dependency.
  * @param string $field Name of a user field to return. This can be 'language' which returns a user's 2 character language code, 
  * or a profile field, e.g. indicia_user_id as introduced by the Easy Login feature. This will be converted
  * to the profile field name if not prefixed with 'profile_'.
  * @param mixed $default Default value to return if not set. */
-function hostsite_get_user_field($field, $default=FALSE) {
-  if (!module_exists('profile'))
-    return $default;
+function hostsite_get_user_field($field, $default=false, $array=false) {
   global $user;
   if ($field==='language')
-    return $user->language;
-  $fieldname = "profile_$field";
-  $exists = db_query("SELECT count(*) FROM {profile_fields} WHERE name=':name'",
-      array(':name' => $fieldname))->fetchField();
-  if (!$exists)
-    return $default;
-  if ($user->uid) {
-    if (!isset($user->$fieldname) && function_exists('profile_load_profile'))
-      // this call is not cached, so only do it once
-      profile_load_profile($user);
-    if (isset($user->$fieldname))
-      return $user->$fieldname;
-    else {
-      return $default;
+    return $user->lang;
+  $fieldname = (substr($field, 0, 6)==='field_' ? '' : 'field_') . $field;
+  $account = user_load($user->uid);
+  $fieldinfo = field_get_items('user', $account, $fieldname);
+  if ($fieldinfo && $array) {
+    $r = array();
+    foreach ($fieldinfo as $val) {
+      $r[] = $val['value'];
     }
-  } 
+    return $r;
+  }
+  elseif ($fieldinfo && !$array) {
+    return check_plain($fieldinfo[0]['value']);
+  }
   else
     return $default;
 }
