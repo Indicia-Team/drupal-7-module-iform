@@ -131,7 +131,6 @@ function iform_translated_menu_link_alter(&$item) {
  */
 function iform_node_access($node, $op, $account=NULL) {
   global $user;
-
   // If no user object is supplied, the access check is for the current user.
   if (empty($account)) {
     $account = $user;
@@ -143,11 +142,10 @@ function iform_node_access($node, $op, $account=NULL) {
   }
 
   if ($op == 'view') {
-    // check if this form has per-node view access control
-    $results = db_query("SELECT nid FROM {iform} WHERE nid=" . $node->nid . " AND (params like '%\"view_access_control\":1%' " .
-          "OR params like '%\"view_access_control\":\"1\"%')");
-    if (count($results)>0) {
+    if (isset($node->params['view_access_control']) && $node->params['view_access_control']) {
       // Use a per node setting to control access. Use default permission name iform access <nid>, or specified one from params if available
+      drupal_set_message(user_access($node->params['permission_name']) ? 'access' : 'denied');
+      return false;
       if (!empty($node->params['permission_name']))
         return user_access($node->params['permission_name']);
       else
