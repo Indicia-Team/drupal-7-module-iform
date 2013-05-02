@@ -1117,28 +1117,41 @@ function iform_client_helpers_path() {
 /**
  * Function that allows Indicia code to hook into the Drupal user fields to find out a field value, without
  * introducing a Drupal code dependency.
+ * @global type $user
  * @param string $field Name of a user field to return. This can be 'language' which returns a user's 2 character language code, 
  * or a profile field, e.g. indicia_user_id as introduced by the Easy Login feature. This will be converted
  * to the profile field name if not prefixed with 'profile_'.
- * @param mixed $default Default value to return if not set. */
-function hostsite_get_user_field($field, $default=false, $array=false) {
+ * @param mixed $default Default value to return if not set.
+ * @param boolean $array Set to true if this field allows multiple values so you need an array
+ * @param type $uid User ID of user to load data for. Defaults to current user.
+ * @return mixed 
+ */
+function hostsite_get_user_field($field, $default=false, $array=false, $uid=false) {
   global $user;
   if ($field==='language')
     return $user->lang;
   $fieldname = (substr($field, 0, 6)==='field_' ? '' : 'field_') . $field;
-  $account = user_load($user->uid);
+  $account = user_load($uid ? $uid : $user->uid);
   $fieldinfo = field_get_items('user', $account, $fieldname);
-  if ($fieldinfo && $array) {
-    $r = array();
-    foreach ($fieldinfo as $val) {
-      $r[] = $val['value'];
+  $fielddef = field_info_field($fieldname);
+  if ($fieldinfo) {
+    if ($fielddef['cardinality']==='1' || $fielddef['cardinality']===1) {
+      // a single value
+      return check_plain($fieldinfo[0]['value']);
     }
-    return $r;
-  }
-  elseif ($fieldinfo && !$array) {
-    return check_plain($fieldinfo[0]['value']);
+    else {
+      // a list of values
+      $r = array();
+      foreach ($fieldinfo as $val) 
+        $r[] = $val['value'];
+      if ($array) 
+        return $r;
+      else
+        return serialize($r);
+    }
   }
   else
+    // value not found
     return $default;
 }
 
