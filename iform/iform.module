@@ -925,7 +925,7 @@ function iform_admin_tasks() {
     data_entry_helper::clear_cache();
     drupal_set_message(t('The Indicia cache has been cleared.'), 'status');
   }
-  $r = '<form method="POST" action="' . url('admin/settings/iform/admin') . '">';
+  $r = '<form method="POST" action="' . url('admin/config/iform/admin') . '">';
   $r .= '<fieldset><legend>' . t('Caching') . '</legend>';
   $r .= '<p>When Indicia requests data from the Warehouse, it can cache a local copy of this data to help speed up future requests for the same data. ' .
       'Although this makes a significant improvement to your website\'s performance, it can mean that changes to data are not visible on your website ' .
@@ -1129,7 +1129,7 @@ function iform_client_helpers_path() {
 function hostsite_get_user_field($field, $default=false, $array=false, $uid=false) {
   global $user;
   if ($field==='language')
-    return $user->lang;
+    return $user->language;
   $fieldname = (substr($field, 0, 6)==='field_' ? '' : 'field_') . $field;
   $account = user_load($uid ? $uid : $user->uid);
   $fieldinfo = field_get_items('user', $account, $fieldname);
