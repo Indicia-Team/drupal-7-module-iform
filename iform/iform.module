@@ -130,6 +130,8 @@ function iform_translated_menu_link_alter(&$item) {
  * @return unknown_type
  */
 function iform_node_access($node, $op, $account=NULL) {
+  if ($node->type!=='iform')
+    return NODE_ACCESS_IGNORE;
   global $user;
   // If no user object is supplied, the access check is for the current user.
   if (empty($account)) {
@@ -144,7 +146,6 @@ function iform_node_access($node, $op, $account=NULL) {
   if ($op == 'view') {
     if (isset($node->params['view_access_control']) && $node->params['view_access_control']) {
       // Use a per node setting to control access. Use default permission name iform access <nid>, or specified one from params if available
-      return NODE_ACCESS_DENY;
       if (!empty($node->params['permission_name']))
         return user_access($node->params['permission_name']) ? NODE_ACCESS_ALLOW : NODE_ACCESS_DENY;
       else
@@ -199,7 +200,7 @@ function iform_form(&$node, $form_state) {
   $form['body'] = array(
     '#type' => 'text_format',
     '#format' => $format,
-    '#title' => check_plain($type['iform']->body_label),
+    '#title' => t('Body'),
     '#default_value' =>  $defaultValue,
     '#rows' => 10,
     '#required' => FALSE
@@ -675,13 +676,13 @@ function iform_view($node, $view_mode) {
               // language translations
               drupal_set_message(lang::get('Thank you. Your records have been saved to the database.'));
             }
-            $params = 'table=' . $response['outer_table'] . '&id=' . $response['outer_id'];
+            $params = array('table' => $response['outer_table'], 'id' => $response['outer_id']);
             if (count($url)>1)
-              $params .= '&' . $url[1];
+              $params += parse_str($url[1]);
             // if the URL contains a bookmark, move this to the end of the params
             $url = explode('#', $url[0]);
-            if (count($url)>0)
-              $params .= '#' . $url[1];
+            if (count($url)>1)
+              $params['fragment'] = $url[1];
             drupal_goto($url[0], $params);
           }
           elseif (!isset($args['message_after_save']) || $args['message_after_save'] || !array_key_exists('success', $response)) {
@@ -1211,6 +1212,31 @@ function hostsite_add_library($library) {
     default: 
       watchdog('iform', "Unknown library requested: $library");
   }
+}
+
+/** 
+ * Set a breadcrumb trail in the host site.
+ * @param array $breadcrumb An associative array where keys are untranslated breadcrumb 
+ * terms and values are the page to go to. The home page is automatically inserted at the 
+ * start and the current page at the end.
+ */
+function hostsite_set_breadcrumb($breadcrumb) {
+  // convert to Drupal style breadcrumb array
+  $drupal_breadcrumb = array(lang::get('Home') => '<front>');
+  foreach ($breadcrumb as $label => $path) {
+    $drupal_breadcrumb[] = l(lang::get($label), $path);
+  }
+  // add current page
+  $drupal_breadcrumb[] = drupal_get_title();
+  drupal_set_breadcrumb($drupal_breadcrumb);
+}
+
+/**
+ * Set the page title in the host site.
+ * @param string $title The translated page title.
+ */
+function hostsite_set_page_title($title) {
+  drupal_set_title($title);
 }
 
 
