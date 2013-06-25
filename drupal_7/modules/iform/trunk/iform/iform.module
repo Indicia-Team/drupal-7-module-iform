@@ -724,7 +724,7 @@ $('.ui-state-default').live('mouseout', function() {
     drupal_add_css(iform_media_folder_path() . 'css/default_site.css');
 
     // Link in the custom css file if present. Drupal skips it if missing.
-    drupal_add_css(iform_client_helpers_path() . '/prebuilt_forms/css/' . $node->iform . '.css');
+    drupal_add_css(iform_client_helpers_path() . 'prebuilt_forms/css/' . $node->iform . '.css');
     drupal_add_css(iform_client_helpers_path() . 'prebuilt_forms/css/node.' . $node->nid . '.css');
     if (!empty($args['additional_css'])) {
       $cssFiles=data_entry_helper::explode_lines($args['additional_css']);
