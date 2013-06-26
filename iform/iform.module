@@ -457,6 +457,7 @@ function iform_ajax_callback($form=NULL, $method=NULL, $nid=NULL) {
  * @return string Form content
  */
 function iform_features_review() {
+  $r = "";
   drupal_set_title(t('Review Indicia Features'));
   if (isset($_POST['form-works'])) {
     // acknowledging a form that needs review, but there are no settings to review
@@ -483,7 +484,7 @@ function iform_features_review() {
       'WHERE i.needs_review>1');
   $gotForms = FALSE;
   $gotSomething = FALSE;
-  while ($row=db_fetch_array($forms)) {
+  foreach ($forms as $row) {
     if (!isset($readAuth)) {
       // we only need the connection details for 1 node, since any readAuth will do here
       $connection = iform_get_connection_details($row['nid']);
