@@ -608,13 +608,6 @@ function iform_view($node, $view_mode) {
     // also force the theme path to be local
     global $indicia_theme_path;
     $indicia_theme_path = iform_media_folder_path() . 'themes/';
-    // if there is a template override file, include it
-    if (file_exists(iform_client_helpers_path() . 'prebuilt_forms/templates/' . $node->iform . '.php')) {
-      require iform_client_helpers_path() . 'prebuilt_forms/templates/' . $node->iform . '.php';
-    }
-    if (file_exists(iform_client_helpers_path() . 'prebuilt_forms/templates/node.' . $node->nid . '.php')) {
-      require iform_client_helpers_path() . 'prebuilt_forms/templates/node.' . $node->nid . '.php';
-    }
     $connection = iform_get_connection_details($node);
     $args['website_id']=$connection['website_id'];
     $args['password']=$connection['password'];
@@ -710,8 +703,22 @@ $('.ui-state-default').live('mouseout', function() {
   $(this).removeClass('ui-state-hover');
 });\n";
     _iform_apply_variables_to_args($args);
+    // if there is a template override file, include it
+    if (file_exists(iform_client_helpers_path() . 'prebuilt_forms/templates/' . $node->iform . '.php')) {
+      require iform_client_helpers_path() . 'prebuilt_forms/templates/' . $node->iform . '.php';
+    }
+    if (file_exists(iform_client_helpers_path() . 'prebuilt_forms/templates/node.' . $node->nid . '.php')) {
+      require iform_client_helpers_path() . 'prebuilt_forms/templates/node.' . $node->nid . '.php';
+    }
+    // link in custom additional template files
+    if (!empty($args['additional_templates'])) {
+      $templateFiles=data_entry_helper::explode_lines($args['additional_templates']);
+      foreach ($templateFiles as $file) {
+        $file = str_replace('{prebuiltformtemplates}', iform_client_helpers_path() . 'prebuilt_forms/templates', $file);
+        require $file;
+      }
+    }
     // Now retrieve the form content
-
     try {
       $r .= call_user_func(array('iform_' . $node->iform, 'get_form'), $args, $node, $response);
     } catch (Exception $e) {
