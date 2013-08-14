@@ -1135,7 +1135,7 @@ function iform_client_helpers_path() {
  * introducing a Drupal code dependency.
  * @global type $user
  * @param string $field Name of a user field to return. This can be 'language' which returns a user's 2 character language code, 
- * or a profile field, e.g. indicia_user_id as introduced by the Easy Login feature. This will be converted
+ * 'id' to return the user's ID, or a profile field, e.g. indicia_user_id as introduced by the Easy Login feature. This will be converted
  * to the profile field name if not prefixed with 'profile_'.
  * @param mixed $default Default value to return if not set.
  * @param boolean $array Set to true if this field allows multiple values so you need an array
@@ -1146,6 +1146,8 @@ function hostsite_get_user_field($field, $default=false, $array=false, $uid=fals
   global $user;
   if ($field==='language')
     return $user->language;
+  elseif ($field==='id')
+    return $user->uid;
   $fieldname = (substr($field, 0, 6)==='field_' ? '' : 'field_') . $field;
   $account = user_load($uid ? $uid : $user->uid);
   $fieldinfo = field_get_items('user', $account, $fieldname);
@@ -1223,6 +1225,7 @@ function hostsite_add_library($library) {
       drupal_add_library('system', 'ui.datepicker');
       drupal_add_library('system', 'ui.tabs');
       drupal_add_library('system', 'ui.progressbar');
+      drupal_add_library('system', 'ui.dialog');
       break;
     default: 
       watchdog('iform', "Unknown library requested: $library");
