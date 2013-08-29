@@ -816,6 +816,11 @@ function iform_check_needs_review($node) {
  */
 function handle_resources() {
   require_once iform_client_helpers_path() . 'data_entry_helper.php';
+  // always add the standard functions library
+  $j = data_entry_helper::$js_path . 'indicia.functions.js';
+  $j = preg_replace('/^' . str_replace('/', '\/', base_path()) . '/', '', $j);
+  drupal_add_js($j);
+  // add any further resources
   if (isset(data_entry_helper::$required_resources)) {
     $resourceList = data_entry_helper::get_resources();
     foreach (data_entry_helper::$required_resources as $resource) {
