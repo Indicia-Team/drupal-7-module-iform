@@ -1231,6 +1231,8 @@ function hostsite_add_library($library) {
       drupal_add_library('system', 'ui.tabs');
       drupal_add_library('system', 'ui.progressbar');
       drupal_add_library('system', 'ui.dialog');
+      drupal_add_library('system', 'effects.fade');
+      drupal_add_library('system', 'effects.slide');
       break;
     default: 
       watchdog('iform', "Unknown library requested: $library");
