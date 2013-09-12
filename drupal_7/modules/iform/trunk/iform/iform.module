@@ -1223,6 +1223,7 @@ function hostsite_set_user_field($field, $data) {
 function hostsite_add_library($library) {
   switch ($library) {
     case 'collapse':
+      drupal_add_library('system', 'drupal.form');
       drupal_add_library('system', 'drupal.collapse');
       break;
     case 'jquery-ui':
