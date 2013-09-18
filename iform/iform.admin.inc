@@ -156,8 +156,8 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
       '4326' => t('GPS Latitude and Longitude (WGS84)'),
       'guernsey' => t('Guernsey Grid'),
       'jersey' => t('Jersey Grid'),
-      'utm30n_ed50' => t('UTM 30N (ED50)'),
-      'utm30n_wgs84' => t('UTM 30N (WGS84)'),
+      'utm30ed50' => t('UTM 30N (ED50)'),
+      'utm30wgs84' => t('UTM 30N (WGS84)'),
       '2169' => t('LUREF Luxembourg')
   );
   $selected_systems = _indicia_form_values_from_sref_systems($systems);
