@@ -1149,11 +1149,11 @@ function iform_client_helpers_path() {
  */
 function hostsite_get_user_field($field, $default=false, $array=false, $uid=false) {
   global $user;
-  if ($field==='language')
+  if ($field==='language' && isset($user->language))
     return $user->language;
-  elseif ($field==='id')
+  elseif ($field==='id' && isset($user->uid))
     return $user->uid;
-  elseif ($field==='name')
+  elseif ($field==='name' && isset($user->name))
     return $user->name;
   $fieldname = (substr($field, 0, 6)==='field_' ? '' : 'field_') . $field;
   $account = user_load($uid ? $uid : $user->uid);
