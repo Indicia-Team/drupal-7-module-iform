@@ -600,10 +600,11 @@ function iform_view($node, $view_mode) {
     return $node;
   }
   global $language;
+  $helperPath=realpath(iform_client_helpers_path());
   if (isset($node->iform) && $node->iform!=-1) {
     iform_load_language_files($node);
     $args = array('language' => $language->language);
-    require_once iform_client_helpers_path() . 'prebuilt_forms/' . $node->iform . '.php';
+    require_once "$helperPath/prebuilt_forms/$node->iform.php";
     ob_start();
     // also force the theme path to be local
     global $indicia_theme_path;
@@ -658,8 +659,8 @@ function iform_view($node, $view_mode) {
           $errors = call_user_func(array('iform_' . $node->iform, 'get_validation_errors'), $_POST, $args);
         }
         // does this Drupal node have any custom validation code?
-        if (file_exists(iform_client_helpers_path() . 'prebuilt_forms/validation/validate.' . $node->nid . '.php')) {
-          require_once iform_client_helpers_path() . 'prebuilt_forms/validation/validate.' . $node->nid . '.php';
+        if (file_exists("$helperPath/prebuilt_forms/validation/validate.$node->nid.php")) {
+          require_once "$helperPath/prebuilt_forms/validation/validate.$node->nid.php";
           $errors = array_merge($errors, iform_custom_validation($_POST));
         }
         if (!empty($errors)) {
@@ -703,18 +704,21 @@ $('.ui-state-default').live('mouseout', function() {
   $(this).removeClass('ui-state-hover');
 });\n";
     _iform_apply_variables_to_args($args);
-    // if there is a template override file, include it
-    if (file_exists(iform_client_helpers_path() . 'prebuilt_forms/templates/' . $node->iform . '.php')) {
-      require iform_client_helpers_path() . 'prebuilt_forms/templates/' . $node->iform . '.php';
-    }
-    if (file_exists(iform_client_helpers_path() . 'prebuilt_forms/templates/node.' . $node->nid . '.php')) {
-      require iform_client_helpers_path() . 'prebuilt_forms/templates/node.' . $node->nid . '.php';
-    }
+    // A drupal theme can override the templates
+    if (function_exists('drupal_get_path') && file_exists(drupal_get_path('theme',$GLOBALS['theme']) . '/indicia.templates.php'))
+      require drupal_get_path('theme',$GLOBALS['theme']) . '/indicia.templates.php';
+    // Or we can override the templates in the iform module, either globally, per form or per node.
+    if (file_exists("$helperPath/prebuilt_forms/templates/global.php")) 
+      require "$helperPath/prebuilt_forms/templates/global.php";    
+    if (file_exists("$helperPath/prebuilt_forms/templates/$node->iform.php"))
+      require "$helperPath/prebuilt_forms/templates/$node->iform.php";
+    if (file_exists("$helperPath/prebuilt_forms/templates/node.$node->nid.php")) 
+      require "$helperPath/prebuilt_forms/templates/node.$node->nid.php";
     // link in custom additional template files
     if (!empty($args['additional_templates'])) {
       $templateFiles=data_entry_helper::explode_lines($args['additional_templates']);
       foreach ($templateFiles as $file) {
-        $file = str_replace('{prebuiltformtemplates}', iform_client_helpers_path() . 'prebuilt_forms/templates', $file);
+        $file = str_replace('{prebuiltformtemplates}', "$helperPath/prebuilt_forms/templates", $file);
         require $file;
       }
     }
@@ -750,11 +754,11 @@ $('.ui-state-default').live('mouseout', function() {
     }
 
     // Link in the form's custom js file if present.
-    if (file_exists(iform_client_helpers_path() . 'prebuilt_forms/js/' . $node->iform . '.js'))
-      drupal_add_js(iform_client_helpers_path() . 'prebuilt_forms/js/' . $node->iform . '.js');
+    if (file_exists("$helperPath/prebuilt_forms/js/$node->iform.js"))
+      drupal_add_js(iform_client_helpers_path() . "prebuilt_forms/js/$node->iform.js");
     // Link in the specific node's custom js file if present.
-    if (file_exists(iform_client_helpers_path() . 'prebuilt_forms/js/node.' . $node->nid . '.js'))
-      drupal_add_js(iform_client_helpers_path() . 'prebuilt_forms/js/node.' . $node->nid . '.js');
+    if (file_exists("$helperPath/prebuilt_forms/js/node.$node->nid.js"))
+      drupal_add_js(iform_client_helpers_path() . "prebuilt_forms/js/node.$node->nid.js");
 
     ob_end_clean();
     $node->content['myfield']=array(
