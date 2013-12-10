@@ -1248,6 +1248,15 @@ function hostsite_add_library($library) {
   }
 }
 
+/**
+ * Display a message in a way that can be unhooked from Drupal.
+ * @param string $msg Message to display
+ * @param string $type Message type, one of 'status', 'warning' and 'error'.
+ */
+function hostsite_show_message($msg, $type='status') {
+  drupal_set_message($msg, $type);
+}
+
 /** 
  * Set a breadcrumb trail in the host site.
  * @param array $breadcrumb An associative array where keys are untranslated breadcrumb 
