@@ -1193,32 +1193,27 @@ function hostsite_get_user_field($field, $default=false, $array=false, $uid=fals
  * @global type $user
  * @param type $field The name of a profile field.
  * @param type $data The data to be saved into the field.
- * @return boolean Returns false if the uid is not available so data cannot be written
+ * @return boolean Returns false if the uid or field is not available so data cannot be written
  */
 function hostsite_set_user_field($field, $data) {
   global $user;
   if ($user->uid) {
-    $fieldname = "profile_$field";
-    //this call is not cached, so only do it once
-    profile_load_profile($user);
-    $r = db_query("SELECT fid FROM {profile_fields} WHERE name=':name'", 
-        array(':name'=>$fieldname))->fetchField();
-    db_delete('profile_values')
-        ->condition('fid', $r['fid'])
-        ->condition('uid', $user->uid)
-        ->execute();
-    db_insert('profile_values')
-        ->fields(array(
-          'fid' => $r['fid'],
-          'uid' => $user->uid,
-          'values' => $data
-        ))
-        ->execute();
+    $fieldname = (substr($field, 0, 6)==='field_' ? '' : 'field_') . $field;
+    $account = user_load($user->uid);
+    if (!isset($account->$fieldname))
+      return FALSE;
+    $account->$fieldname[$account->language][0]['value'] = $data;
+    $info = field_info_field($fieldname);
+    $fields = array($info['id']);
+     
+    // Execute the storage function
+    field_sql_storage_field_storage_write('user', $account, 'update', $fields);
+     
+    // Clear field cache
+    cache_clear_all("field:user:$account->uid", 'cache_field');
     return TRUE;
   } 
-  else {
-    return FALSE;
-  }
+  return FALSE;
 }
 
 /**
