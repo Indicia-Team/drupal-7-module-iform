@@ -176,6 +176,7 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
   // Add any module declared additional iform variables to the settings form. Extra variables only 
   // visible after install, as they may need a website connection
   if (!defined('MAINTENANCE_MODE') || MAINTENANCE_MODE != 'install') {
+    $readAuth = data_entry_helper::get_read_auth(variable_get('indicia_website_id', 0), variable_get('indicia_password', ''));
     // Add any indicia variables declared by hook_variable_info
     global $language;
     $vars = module_invoke_all('variable_info', array("language" => $language));
@@ -185,6 +186,8 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
       if (isset($config['addToIndiciaSettingsPage']) && $config['addToIndiciaSettingsPage']) {
         if (isset($config['subtype']) && preg_match('/^termlists_term:(?P<list>.+)/', $config['subtype'], $matches))
           $type = 'select';  
+        elseif (isset($config['subtype']) && preg_match('/^(?P<table>[a-z_]+)\.(?P<caption>[a-z_]+)/', $config['subtype'], $matches))
+          $type = 'select';  
         else
           $type = 'textfield';
         $ctrls[$var] = array(
@@ -193,14 +196,25 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
           '#description'=>$config['description'],
           '#default_value'=>variable_get($var, '')
         );
-        if (isset($matches['list'])) {
-          $rows = data_entry_helper::get_population_data(array(
-            'table' => 'termlists_term',
-            'extraParams' => $readAuth + array('termlist_external_key' => 'indicia:' . $matches['list'])
-          ));
+        if (isset($matches['list']) || isset($matches['table'])) {
+          if (isset($matches['list'])) {
+            $rows = data_entry_helper::get_population_data(array(
+              'table' => 'termlists_term',
+              'extraParams' => $readAuth + array('termlist_external_key' => 'indicia:' . $matches['list'])
+            ));
+            $captionField='term';
+          }
+          else {
+            $rows = data_entry_helper::get_population_data(array(
+              'table' => $matches['table'],
+              'extraParams' => $readAuth,
+              'columns' => 'id,'.$matches['caption']
+            ));
+            $captionField=$matches['caption'];
+          }
           $options = array('' => t('<please select>'));
           foreach ($rows as $row) {
-            $options[$row['id']] = $row['term'];
+            $options[$row['id']] = $row[$captionField];
           }
           $ctrls[$var]['#options'] = $options;
         }
