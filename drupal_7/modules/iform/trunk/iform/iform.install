@@ -49,6 +49,8 @@ function iform_schema() {
 function iform_install() {
   // don't promote iforms to front page by default
   variable_set('node_options_iform', array('status'));
+  // hide author and date info
+  variable_set('node_submitted_iform', 0); 
   // and default to no comments
   variable_set('comment_iform', (module_exists('comment') ? COMMENT_NODE_HIDDEN : 0));
   // Don't display date and author information for page nodes by default.
