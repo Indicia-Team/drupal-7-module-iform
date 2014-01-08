@@ -41,17 +41,22 @@ function iform_permission() {
     ), 'edit own iform' => array(
       'title' => t('Edit own IForm web pages')
     )
-   );
+  );
+  $helpersLoaded = false;
   // Go through every IForm node.
   //   Get the particular iform, check if it has a perms method.
   //   if yes, call it and add to the return list
-  $results = db_query('SELECT n.nid, i.iform FROM {iform} i, {node} n WHERE i.nid = n.nid');
+  $results = db_query('SELECT n.nid, i.iform, i.params FROM {iform} i, {node} n WHERE i.nid = n.nid');
   foreach ($results as $result) {
     if ($result->iform) {
-      iform_load_helpers(array('data_entry_helper'));
+      $params = json_decode($result->params, TRUE);
+      if (!$helpersLoaded) {
+        iform_load_helpers(array('data_entry_helper'));
+        $helpersLoaded=true;
+      }
       require_once iform_client_helpers_path() . 'prebuilt_forms/' . $result->iform . '.php';
       if (method_exists('iform_' . $result->iform, 'get_perms')) {
-        $perms = call_user_func(array('iform_' . $result->iform, 'get_perms'), $result->nid);
+        $perms = call_user_func(array('iform_' . $result->iform, 'get_perms'), $result->nid, $params);
         foreach($perms as $perm)
           $retVal[$perm] = array('title'=>t($perm));
       }
