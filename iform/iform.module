@@ -657,7 +657,7 @@ function iform_view($node, $view_mode) {
           $args['redirect_on_success'] = $redirect;
       }
       // if for some reason the iform gives back an empty submission, ignore it
-      if ($s) {
+      if (isset($s) && $s) {
         $errors = array();
         // does this Drupal node have any in-built validation code?
         if (method_exists('iform_' . $node->iform, 'get_validation_errors')) {
