@@ -195,22 +195,8 @@ function iform_form(&$node, $form_state) {
     '#default_value' => $node->title,
     '#weight' => 0
   );
-  // We want the body and filter elements to be adjacent. We could try doing
-  // this by setting their weights, but another module might add elements to the
-  // form with the same weights and end up between ours. By putting them into a
-  // sub-array together, we're able force them to be rendered together.
-  $defaultValue = isset($node->body['value']) ? $node->body['value'] : NULL;
-  $format = isset($node->format) ? $node->format : NULL;
+
   $iform = isset($node->iform) ? $node->iform : NULL;
-  $form['body'] = array(
-    '#type' => 'text_format',
-    '#format' => $format,
-    '#title' => t('Body'),
-    '#default_value' =>  $defaultValue,
-    '#rows' => 10,
-    '#required' => FALSE
-  );
-  
 
   // Define the new form fields
   $form['iform_forms'] = array(
