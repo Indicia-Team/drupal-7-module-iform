@@ -584,7 +584,7 @@ function iform_view($node, $view_mode) {
       $msg = t('Please contact the site administrator.');
     $r = t('This form has been added by enabling an Indicia Feature but its configuration needs to be reviewed before use.') .
         ' ' . $msg;
-    $node->content['myfield']=array(
+    $node->content['iform'] = array(
       '#markup' => $r,
       '#weight' => 1
     );
@@ -754,7 +754,7 @@ $('.ui-state-default').live('mouseout', function() {
       drupal_add_js(iform_client_helpers_path() . "prebuilt_forms/js/node.$node->nid.js");
 
     ob_end_clean();
-    $node->content['myfield']=array(
+    $node->content['iform'] = array(
       '#markup' => $r,
       '#weight' => 1
     );
