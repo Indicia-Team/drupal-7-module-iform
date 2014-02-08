@@ -395,7 +395,7 @@ function iform_menu() {
     'type' => MENU_NORMAL_ITEM,
     'weight' => 2
   );
-  $items['admin/build/features/indicia'] = array(
+  $items['admin/structure/features/indicia'] = array(
     'title' => 'Review IForm Features',
     'description' => 'After installing a feature containing Indicia forms, use this page to configure any ' .
         'site specific settings for the forms.',
