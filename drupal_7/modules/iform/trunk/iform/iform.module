@@ -360,10 +360,11 @@ function iform_delete($node) {
 function iform_load($nodes) {
   foreach ($nodes as &$node) {
     $qry = db_query('SELECT iform, params, needs_review FROM {iform} WHERE nid = :nid', array(':nid' => $node->nid));
-    
     unset($node->params);
     $node->params = array();
     foreach ($qry as $record) {
+      $node->iform=$record->iform;
+      $node->needs_review=$record->needs_review;
       $params=json_decode($record->params, TRUE);
       $node->iform = $record->iform;
       // null string is stored if the iform has no parameters to store
@@ -417,7 +418,7 @@ function iform_menu() {
     'type' => MENU_NORMAL_ITEM,
     'weight' => 2
   );
-  $items['admin/build/features/indicia'] = array(
+  $items['admin/structure/features/indicia'] = array(
     'title' => 'Review IForm Features',
     'description' => 'After installing a feature containing Indicia forms, use this page to configure any ' .
         'site specific settings for the forms.',
@@ -607,7 +608,7 @@ function iform_view($node, $view_mode) {
       $msg = t('Please contact the site administrator.');
     $r = t('This form has been added by enabling an Indicia Feature but its configuration needs to be reviewed before use.') .
         ' ' . $msg;
-    $node->content['myfield']=array(
+    $node->content['iform'] = array(
       '#markup' => $r,
       '#weight' => 1
     );
@@ -685,23 +686,32 @@ function iform_view($node, $view_mode) {
           // Does the form redirect after success?
           if (is_array($response) && array_key_exists('success', $response) &&
               array_key_exists('redirect_on_success', $args) && $args['redirect_on_success']) {
-            $url = explode('?', $args['redirect_on_success']);
             if (!isset($args['message_after_save']) || $args['message_after_save']) {
               // use lang::get rather than t() here because this message is displayed to the recorders, 
               // and therefore it must be possible to change the English language version as well as other
               // language translations
               drupal_set_message(lang::get('Thank you. Your records have been saved to the database.'));
             }
-            $params = array('table' => $response['outer_table'], 'id' => $response['outer_id']);
-            if (count($url)>1) {
-              parse_str($url[1], $arr);
-              $params += $arr;
+            $parts = explode('?', $args['redirect_on_success'], 2);
+            $url = array_shift($parts); // first item removed from array
+            if (count($parts)) {
+              $parts = explode('#', $parts[0], 2);
+              $queryStr = array_shift($parts); // info between the ? and # is the query string
+              // Get an array of the redirect_on_success specified query string params
+              parse_str($queryStr, $params);
+            } else {
+              $params=array();
             }
-            // if the URL contains a bookmark, move this to the end of the params
-            $url = explode('#', $url[0]);
-            if (count($url)>1)
-              $params['fragment'] = $url[1];
-            drupal_goto($url[0], array('query'=>$params));
+            // Merge the information about the saved record in
+            $params = array_merge(array(
+              'table'=>$response['outer_table'],
+              'id'=>$response['outer_id']
+            ), $params);
+            $params = data_entry_helper::array_to_query_string($params);
+            // anything left in $parts is the bookmark
+            if (count($parts))
+              $params .= '#' . $parts[0];
+            drupal_goto($url, array('query'=>$params));
           }
           elseif (!isset($args['message_after_save']) || $args['message_after_save'] || !array_key_exists('success', $response)) {
             // This dumps errors, and/or a success message if no redirection.
@@ -777,7 +787,7 @@ $('.ui-state-default').live('mouseout', function() {
       drupal_add_js(iform_client_helpers_path() . "prebuilt_forms/js/node.$node->nid.js");
 
     ob_end_clean();
-    $node->content['myfield']=array(
+    $node->content['iform'] = array(
       '#markup' => $r,
       '#weight' => 1
     );
