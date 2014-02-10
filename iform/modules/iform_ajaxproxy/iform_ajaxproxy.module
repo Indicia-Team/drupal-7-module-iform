@@ -146,7 +146,7 @@ function iform_ajaxproxy_proxy() {
       $Model = data_entry_helper::build_submission($_POST, $structure);
         break;
     case "loc-smp-occ":
-        $structure = array(
+      $structure = array(
           'model' => 'sample',
           'subModels' => array(
               'occurrence' => array('fk' => 'sample_id')
@@ -156,6 +156,14 @@ function iform_ajaxproxy_proxy() {
           )
       );
       $Model = data_entry_helper::build_submission($_POST, $structure);
+      if(array_key_exists('locations_website:website_id', $_POST)){
+        if(isset($Model['superModels'][0]['model']['subModels']))
+          $Model['superModels'][0]['model']['subModels'] = array();
+        $Model['superModels'][0]['model']['subModels'][] = array(
+              'fkId' => 'location_id',
+              'model' => array('id' => 'locations_website',
+                         'fields' => array('website_id' => array('value' => $_POST['locations_website:website_id']))));
+      }
       foreach($_POST as $key=>$value){
         if(substr($key,0,14) == 'determination:'){
           $Model['subModels'][0]['model']['subModels'][] = array(
@@ -285,25 +293,16 @@ function iform_ajaxproxy_proxy() {
       // TODO? echo a failure response: invalid index type
       return;
   }
-  //
-  $request = data_entry_helper::$base_url."/index.php/services/data/save";
-  // postargs is handled as an array to allow proper handling of arguments: otherwise we would have to urlencode the model in case there is an ampersand etc in it...
-  // also removes URL size limits from the data sent.
-  $postargs = array('submission' => json_encode($Model),
-                    'auth_token' => sha1($nonce.":".$conn['password']),
-                    'nonce' => $nonce);
+  $writeTokens = array('nonce'=>$nonce, 'auth_token' => sha1($nonce.":".$conn['password']));
   // pass through the user ID as this can then be used to set created_by and updated_by_ids
-  if (isset($_REQUEST['user_id']))
-    $postargs['user_id'] = $_REQUEST['user_id'];
-  if (isset($_REQUEST['sharing']))
-    $postargs['sharing'] = $_REQUEST['sharing'];
-  $postresponse = data_entry_helper::http_post($request, $postargs, false);
-  // the response array will always feature an output, which is the actual response or error message.
-  $response = $postresponse['output'];
+  if (isset($_REQUEST['user_id'])) $writeTokens['user_id'] = $_REQUEST['user_id'];
+  if (isset($_REQUEST['sharing'])) $writeTokens['sharing'] = $_REQUEST['sharing'];
+  $response = data_entry_helper::forward_post_to('save', $Model, $writeTokens);
   // if it is not json format, assume error text, and json encode that.
-  if (!json_decode($response, true))
-      $response = "{error:\"".$response."\"}";
-  echo $response;
+  //if (!json_decode($output, true))
+  //    $response = "{error:\"".$output."\"}";
+  // possible:
+  echo json_encode($response);
 }
 
 
