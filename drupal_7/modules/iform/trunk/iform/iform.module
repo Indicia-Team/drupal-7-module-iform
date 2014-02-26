@@ -1083,8 +1083,6 @@ function iform_load_helpers(array $files) {
     // bing api key may be ommitted for backwards compatibility reasons
     if (isset(helper_config::$bing_api_key))
       helper_config::$bing_api_key = variable_get('indicia_bing_api_key', helper_config::$bing_api_key);
-    helper_config::$flickr_api_key = variable_get('indicia_flickr_api_key', helper_config::$flickr_api_key);
-    helper_config::$flickr_api_secret = variable_get('indicia_flickr_api_secret', helper_config::$flickr_api_secret);
   }
   require_once "$path/helper_base.php";
   foreach ($files as $file)
