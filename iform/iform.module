@@ -1068,8 +1068,12 @@ function iform_load_helpers(array $files) {
   if (!class_exists('helper_config')) {
     require_once $path . 'helper_config.php';
     // now we have an opportunity to load settings into helper_config from the drupal variables.
-    helper_config::$base_url = variable_get('indicia_base_url', helper_config::$base_url);
-    helper_config::$geoserver_url = variable_get('indicia_geoserver_url', helper_config::$geoserver_url);
+    if (function_exists('iform_load_warehouse_details'))
+      iform_load_warehouse_details();
+    else { 
+      helper_config::$base_url = variable_get('indicia_base_url', helper_config::$base_url);
+      helper_config::$geoserver_url = variable_get('indicia_geoserver_url', helper_config::$geoserver_url);
+    }
     // cache_folder
     // interim_image_folder
     // final_image_folder
