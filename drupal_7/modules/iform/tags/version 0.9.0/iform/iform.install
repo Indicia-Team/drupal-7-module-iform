@@ -1,0 +1,78 @@
+<?php 
+/**
+* @file
+* Install, update, and uninstall functions for the iform module.
+*/
+
+/**
+ * Implementation for hook_schema. Declares the table that is required for storing
+ * iform data.
+ */
+function iform_schema() {
+  $schema['iform'] = array(
+    'description' => 'Table required for storing Indicia prebuilt form parameters.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'The primary identifier for a node and therefore an iform instance.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'iform' => array(
+        'description' => 'Name of the prebuilt form that is linked to the node.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''
+      ),
+      'params' => array(
+        'description' => 'JSON structure containing parameters passed to the form on instantiation.',
+        'type' => 'text',        
+        'not null' => TRUE,
+      ),
+      'needs_review' => array(
+        'description' => 'Review state after node import. 0 indicates the node is not imported. ' .
+            '1 indicates a node that is imported but has been reviewed. 2 indicates that the node ' .
+            'is imported and site specific settings have been set - it just ' .
+            'needs a final review. 3 indicates that this is a freshly imported form which may have some ' .
+            'configuration parameters that are site specific and need review.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0
+      )
+    ),
+    'primary key' => array('nid')
+  );
+  return $schema;
+}
+
+function iform_install() {
+  // don't promote iforms to front page by default
+  variable_set('node_options_iform', array('status'));
+  // hide author and date info
+  variable_set('node_submitted_iform', FALSE); 
+  // and default to no comments
+  variable_set('comment_iform', (module_exists('comment') ? COMMENT_NODE_HIDDEN : 0));
+  // Don't display date and author information for page nodes by default.
+  $theme_settings = variable_get('theme_settings', array());
+  $theme_settings['toggle_node_info_iform'] = FALSE;
+  variable_set('theme_settings', $theme_settings);
+  node_types_rebuild();
+  $type = node_type_get_types();
+  node_add_body_field($type['iform']);
+}
+
+function iform_uninstall() {
+  variable_del('indicia_website_id');
+  variable_del('indicia_password');
+  variable_del('indicia_allow_connection_override');
+  variable_del('indicia_base_url');
+  variable_del('indicia_geoserver_url');
+  variable_del('indicia_geoplanet_api_key');
+  // This variable is deprecated but might exist from pre 0.8 installs.
+  variable_del('indicia_google_search_api_key');
+  variable_del('indicia_map_centroid_lat');
+  variable_del('indicia_map_centroid_long');
+  variable_del('indicia_map_zoom');
+  variable_del('indicia_spatial_systems');
+}

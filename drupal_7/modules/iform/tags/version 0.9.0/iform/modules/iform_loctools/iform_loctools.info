@@ -1,0 +1,6 @@
+; $Id$
+name = Indicia Location Tools
+description = A module allowing Indicia data entry forms to control access on a per user/location basis.
+core = 6.x
+package = "Indicia"
+dependencies[] = iform

@@ -1,0 +1,6 @@
+; $Id$
+name = Indicia forms
+description = A node module allowing Indicia data entry forms to be created.
+core = 7.x
+package = "Indicia"
+configure = admin/config/iform/settings
