@@ -700,6 +700,8 @@ function iform_view($node, $view_mode) {
               // Get an array of the redirect_on_success specified query string params
               parse_str($queryStr, $params);
             } else {
+              $parts = explode('#', $url, 2); // split bookmark fragment off
+              $url = array_shift($parts);
               $params=array();
             }
             // Merge the information about the saved record in
@@ -1061,20 +1063,36 @@ function iform_load_language_files($node) {
  * @param array $files List of helper class names to load.
  */
 function iform_load_helpers(array $files) {
+  $configLoaded = class_exists('helper_config');
   if (!is_array($files))
     throw new exception('Call to iform_load_helpers must pass an array of helper file names');
   $path = iform_client_helpers_path();
+  require_once "$path/helper_base.php";
+  foreach ($files as $file)
+    require_once "$path/$file.php";
   // we always need the helper_config file
-  if (!class_exists('helper_config')) {
+  if (!$configLoaded) {
     require_once $path . 'helper_config.php';
-    // now we have an opportunity to load settings into helper_config from the drupal variables.
+    // now we have an opportunity to load warehouse settings into helper_config from the drupal variables. So a module
+    // could load a different warehouse per page.
     if (function_exists('iform_load_warehouse_details'))
       iform_load_warehouse_details();
     else { 
       helper_config::$base_url = variable_get('indicia_base_url', helper_config::$base_url);
       helper_config::$geoserver_url = variable_get('indicia_geoserver_url', helper_config::$geoserver_url);
     }
-    // cache_folder
+    if (!helper_base::$cache_folder) {
+      // path unique to the warehouse, so no problems if we switch warehouse
+      $folder = preg_replace("/[^a-zA-Z0-9]+/", "", helper_base::$base_url);
+      // cache folder into private file path if specified as its more secure, otherwise public.
+      $filepath = variable_get('file_private_path', '');
+      if (!$filepath)
+        $filepath = variable_get('file_public_path', conf_path() . '/files');
+      helper_base::$cache_folder = "$filepath/indicia/cache/$folder/";
+      if (!is_dir(helper_base::$cache_folder)) {
+        mkdir(helper_base::$cache_folder, 0777, true);
+      }
+    }
     // interim_image_folder
     // final_image_folder
     // indicia_upload_path
@@ -1084,9 +1102,6 @@ function iform_load_helpers(array $files) {
     if (isset(helper_config::$bing_api_key))
       helper_config::$bing_api_key = variable_get('indicia_bing_api_key', helper_config::$bing_api_key);
   }
-  require_once "$path/helper_base.php";
-  foreach ($files as $file)
-    require_once "$path/$file.php";
   // ensure css and js is loaded locally
   helper_base::$js_path = base_path() . iform_media_folder_path() . 'js/';
   helper_base::$css_path = base_path() . iform_media_folder_path() . 'css/';
