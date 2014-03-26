@@ -1363,3 +1363,20 @@ function iform_get_allowed_website_ids($readAuth, $purpose='reporting') {
   return $websiteIds;
 }
 
+/**
+ * Implement hook_variable_info.
+ * Returns information about the variables declared by this module, allowing an admin interface
+ * to be created. We use a couple of custom extensions to allow these to be added to the Indicia
+ * settings page.
+ */
+function iform_variable_info($options) {
+  $variable['iform_master_checklist_id']=array(
+    'title'=>t('Master species checklist'),
+    'description'=>t('Select the species checklist used as an all species hierarchy.'),
+    'type'=>'number',
+    'subtype'=>'taxon_list.title',
+    'default'=>'',
+    'addToIndiciaSettingsPage'=>true
+  );
+  return $variable;
+}
