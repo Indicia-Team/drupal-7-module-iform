@@ -769,24 +769,24 @@ $('.ui-state-default').live('mouseout', function() {
     drupal_add_css(iform_media_folder_path() . 'css/default_site.css');
 
     // Link in the custom css file if present. Drupal skips it if missing.
-    drupal_add_css(iform_client_helpers_path() . 'prebuilt_forms/css/' . $node->iform . '.css');
-    drupal_add_css(iform_client_helpers_path() . 'prebuilt_forms/css/node.' . $node->nid . '.css');
+    drupal_add_css(iform_client_helpers_path() . 'prebuilt_forms/css/' . $node->iform . '.css', array('preprocess'=>FALSE));
+    drupal_add_css(iform_client_helpers_path() . 'prebuilt_forms/css/node.' . $node->nid . '.css', array('preprocess'=>FALSE));
     if (!empty($args['additional_css'])) {
       $cssFiles=data_entry_helper::explode_lines($args['additional_css']);
       foreach ($cssFiles as $file) {
         $file = str_replace(array('{mediacss}', '{theme}', '{prebuiltformcss}'),
             array(iform_media_folder_path() . 'css', path_to_theme(), iform_client_helpers_path() . 'prebuilt_forms/css'),
             $file);
-        drupal_add_css($file);
+        drupal_add_css($file, array('preprocess'=>FALSE));
       }
     }
 
     // Link in the form's custom js file if present.
     if (file_exists("$helperPath/prebuilt_forms/js/$node->iform.js"))
-      drupal_add_js(iform_client_helpers_path() . "prebuilt_forms/js/$node->iform.js");
+      drupal_add_js(iform_client_helpers_path() . "prebuilt_forms/js/$node->iform.js", array('preprocess'=>FALSE));
     // Link in the specific node's custom js file if present.
     if (file_exists("$helperPath/prebuilt_forms/js/node.$node->nid.js"))
-      drupal_add_js(iform_client_helpers_path() . "prebuilt_forms/js/node.$node->nid.js");
+      drupal_add_js(iform_client_helpers_path() . "prebuilt_forms/js/node.$node->nid.js", array('preprocess'=>FALSE));
 
     ob_end_clean();
     $node->content['iform'] = array(
