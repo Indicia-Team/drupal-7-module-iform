@@ -1276,6 +1276,7 @@ function hostsite_add_library($library) {
       drupal_add_library('system', 'ui.datepicker');
       drupal_add_library('system', 'ui.tabs');
       drupal_add_library('system', 'ui.progressbar');
+      drupal_add_library('system', 'ui.sortable');
       drupal_add_library('system', 'ui.dialog');
       drupal_add_library('system', 'effects.fade');
       drupal_add_library('system', 'effects.slide');
