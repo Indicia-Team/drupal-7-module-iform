@@ -1152,8 +1152,12 @@ function iform_uuid_node_features_export_render_alter(&$export, $node, $module) 
     require_once iform_client_helpers_path() . "prebuilt_forms/$form.php";
     $params = call_user_func(array('iform_' . $form, 'get_parameters'));
     foreach ($params as $param) {
-      if (isset($param['siteSpecific']) && $param['siteSpecific'])
-        unset($export->params[$param['name']]);
+      if (isset($param['siteSpecific']) && $param['siteSpecific']) {
+        if (isset($param['name']))
+          unset($export->params[$param['name']]);
+        elseif (isset($param['name']))
+          unset($export->params[$param['fieldnamename']]);
+      }
     }
     // also remove the warehouse login settings
     unset($export->params['website_id']);
