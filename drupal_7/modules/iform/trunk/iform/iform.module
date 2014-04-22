@@ -293,13 +293,12 @@ function get_custom_param_values($node) {
 */
 function iform_insert($node) {
   $params=get_custom_param_values($node);
-  if (isset($_POST['iform']))
-    $iform = $_POST['iform'];
-  else
-    $iform = $node->iform;
+  $iform = isset($_POST['iform']) ? $_POST['iform'] : $node->iform;
   $needs_review = isset($node->needs_review) ? $node->needs_review : 0;
-  $available_for_groups = isset($_POST['available_for_groups']) ? $_POST['available_for_groups'] : 0;
-  $limit_to_group_id = isset($_POST['limit_to_group_id']) ? $_POST['limit_to_group_id'] : null;
+  $available_for_groups = isset($_POST['available_for_groups']) ? $_POST['available_for_groups'] : 
+      (isset($node->available_for_groups) ? $node->available_for_groups : 0);
+  $limit_to_group_id = !empty($_POST['limit_to_group_id']) ? $_POST['limit_to_group_id'] : 
+      (isset($node->limit_to_group_id) ? $node->limit_to_group_id : null);
   db_insert('iform')
     ->fields(array('nid' => $node->nid,
         'iform' => $iform,
@@ -316,13 +315,12 @@ function iform_insert($node) {
 * @param node object
 */
 function iform_update($node) {
-  if (isset($_POST['iform']))
-    $iform = $_POST['iform'];
-  else
-    $iform = $node->iform;
+  $iform = isset($_POST['iform']) ? $_POST['iform'] : $node->iform;
   $needs_review = isset($node->needs_review) ? $node->needs_review : 0;
-  $available_for_groups = isset($_POST['available_for_groups']) ? $_POST['available_for_groups'] : 0;
-  $limit_to_group_id = empty($_POST['limit_to_group_id']) ? null : $_POST['limit_to_group_id'];
+  $available_for_groups = isset($_POST['available_for_groups']) ? $_POST['available_for_groups'] : 
+      (isset($node->available_for_groups) ? $node->available_for_groups : 0);
+  $limit_to_group_id = !empty($_POST['limit_to_group_id']) ? $_POST['limit_to_group_id'] : 
+      (isset($node->limit_to_group_id) ? $node->limit_to_group_id : null);
   // updating an iform, when needs_review=3, means that the features module has detected that a form in default state
   // has had its code changed so needs to be reflected in the database. In this case we actually need to merge the
   // params together so that user params are not lost.
@@ -1155,8 +1153,8 @@ function iform_uuid_node_features_export_render_alter(&$export, $node, $module) 
       if (isset($param['siteSpecific']) && $param['siteSpecific']) {
         if (isset($param['name']))
           unset($export->params[$param['name']]);
-        elseif (isset($param['name']))
-          unset($export->params[$param['fieldnamename']]);
+        elseif (isset($param['fieldname']))
+          unset($export->params[$param['fieldname']]);
       }
     }
     // also remove the warehouse login settings
