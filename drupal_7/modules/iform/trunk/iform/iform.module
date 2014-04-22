@@ -220,12 +220,15 @@ function iform_form(&$node, $form_state) {
     '#weight' => 6
   );
   $connection = iform_get_connection_details($node);
+  $readAuth = form_helper::get_read_auth($connection['website_id'], $connection['password']);
   $form['iform_forms']['picker'] = array(
-    '#markup' => form_helper::prebuilt_form_picker(array(
+    '#markup' => form_helper::prebuilt_form_picker($readAuth, array(
       'form' => $iform,
       'website_id' => $connection['website_id'],
       'password' => $connection['password'],
-      'needWebsiteInputs' => !$connection['using_drupal_vars'] || variable_get('indicia_allow_connection_override', FALSE)
+      'needWebsiteInputs' => !$connection['using_drupal_vars'] || variable_get('indicia_allow_connection_override', FALSE),
+      'available_for_groups' => isset($node->available_for_groups) ? $node->available_for_groups : false,
+      'limit_to_group_id' => isset($node->limit_to_group_id) ? $node->limit_to_group_id : null
     ))
   );
   if ($iform) {
@@ -295,11 +298,15 @@ function iform_insert($node) {
   else
     $iform = $node->iform;
   $needs_review = isset($node->needs_review) ? $node->needs_review : 0;
+  $available_for_groups = isset($node->available_for_groups) ? $node->available_for_groups : 0;
+  $limit_to_group_id = isset($node->limit_to_group_id) ? $node->limit_to_group_id : null;
   db_insert('iform')
     ->fields(array('nid' => $node->nid,
         'iform' => $iform,
         'params' => $params,
-        'needs_review' => $needs_review))
+        'needs_review' => $needs_review,
+        'available_for_groups' => $available_for_groups,
+        'limit_to_group_id' => $limit_to_group_id))
     ->execute();
 }
 
@@ -314,6 +321,8 @@ function iform_update($node) {
   else
     $iform = $node->iform;
   $needs_review = isset($node->needs_review) ? $node->needs_review : 0;
+  $available_for_groups = isset($_POST['available_for_groups']) ? $_POST['available_for_groups'] : 0;
+  $limit_to_group_id = empty($_POST['limit_to_group_id']) ? null : $_POST['limit_to_group_id'];
   // updating an iform, when needs_review=3, means that the features module has detected that a form in default state
   // has had its code changed so needs to be reflected in the database. In this case we actually need to merge the
   // params together so that user params are not lost.
@@ -328,7 +337,9 @@ function iform_update($node) {
       ->fields(array(
         'iform'=>$iform,
         'params'=>$params,
-        'needs_review'=>$needs_review
+        'needs_review'=>$needs_review,
+        'available_for_groups'=>$available_for_groups,
+        'limit_to_group_id'=>$limit_to_group_id
       ))
       ->condition('nid', $node->nid)
       ->execute();
@@ -359,12 +370,14 @@ function iform_delete($node) {
 */
 function iform_load($nodes) {
   foreach ($nodes as &$node) {
-    $qry = db_query('SELECT iform, params, needs_review FROM {iform} WHERE nid = :nid', array(':nid' => $node->nid));
+    $qry = db_query('SELECT iform, params, needs_review, available_for_groups, limit_to_group_id FROM {iform} WHERE nid = :nid', array(':nid' => $node->nid));
     unset($node->params);
     $node->params = array();
     foreach ($qry as $record) {
       $node->iform=$record->iform;
       $node->needs_review=$record->needs_review;
+      $node->available_for_groups=$record->available_for_groups;
+      $node->limit_to_group_id=$record->limit_to_group_id;
       $params=json_decode($record->params, TRUE);
       $node->iform = $record->iform;
       // null string is stored if the iform has no parameters to store
