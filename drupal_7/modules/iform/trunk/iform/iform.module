@@ -298,8 +298,8 @@ function iform_insert($node) {
   else
     $iform = $node->iform;
   $needs_review = isset($node->needs_review) ? $node->needs_review : 0;
-  $available_for_groups = isset($node->available_for_groups) ? $node->available_for_groups : 0;
-  $limit_to_group_id = isset($node->limit_to_group_id) ? $node->limit_to_group_id : null;
+  $available_for_groups = isset($_POST['available_for_groups']) ? $_POST['available_for_groups'] : 0;
+  $limit_to_group_id = isset($_POST['limit_to_group_id']) ? $_POST['limit_to_group_id'] : null;
   db_insert('iform')
     ->fields(array('nid' => $node->nid,
         'iform' => $iform,
