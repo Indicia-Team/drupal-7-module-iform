@@ -89,9 +89,7 @@ function iform_uninstall() {
 }
 
 /**
-* Implementation of hook_update_N for version 7.x-1.2.
-*
-* @return array Defines the results of the updates.
+* This update add fields to support recording groups.
 */
 function iform_update_7100() {
   $schema = iform_schema();

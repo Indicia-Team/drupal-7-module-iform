@@ -121,8 +121,14 @@ function iform_translated_menu_link_alter(&$item) {
   // look for pattern node/%.
   preg_match('/^node\/(?P<nid>\d+)/', $item['link_path'], $matches);
   if (count($matches)) {
-    $node = node_load($matches['nid']);
-    $item['access'] = node_access('view', $node);
+    if(iform_needs_update()) {
+      // Have to run update before iform_load() query can execute.
+      $item['access'] = FALSE;
+    }
+    else {
+      $node = node_load($matches['nid']);
+      $item['access'] = node_access('view', $node);
+    }
   }
 }
 
@@ -1396,4 +1402,23 @@ function iform_variable_info($options) {
     'addToIndiciaSettingsPage'=>true
   );
   return $variable;
+}
+
+/**
+ * Test whether update needs to run.
+ * @return boolean TRUE if update needed else FALSE.
+ */
+function iform_needs_update() {
+  $version = drupal_get_installed_schema_version('iform');
+  if($version > 0 && $version < 7100) {
+    // Have to run update before iform_load() query can execute.
+    $message = t('The IForm module needs you to run '
+      . '<a href="@url">updates</a> now.', array('@url' => url('update.php')));
+    drupal_set_message($message, 'warning', FALSE);
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+
 }
