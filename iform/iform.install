@@ -80,6 +80,8 @@ function iform_uninstall() {
   variable_del('indicia_base_url');
   variable_del('indicia_geoserver_url');
   variable_del('indicia_geoplanet_api_key');
+  variable_del('indicia_google_api_key');
+  variable_del('indicia_bing_api_key');
   // This variable is deprecated but might exist from pre 0.8 installs.
   variable_del('indicia_google_search_api_key');
   variable_del('indicia_map_centroid_lat');

@@ -99,6 +99,16 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
     '#required' => FALSE,
     '#default_value' => variable_get('indicia_geoplanet_api_key', helper_config::$geoplanet_api_key),
   );
+  $form['api_keys']['indicia_google_api_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Google API Key'),
+    '#description' => t('The Google API provides the Places API text search, another option to lookup place names when you use the place search control. ' .
+        'It references a global database of places and returns the list of possibilities with their spatial references ' .
+        'to Indicia. To obtain your own API key for the Google API, please visit <a target="_blank" href="https://code.google.com/apis/console">' .
+        'the Google APIS Console</a>. '),
+    '#required' => FALSE,
+    '#default_value' => variable_get('indicia_google_api_key', isset(helper_config::$google_api_key) ? helper_config::$google_api_key : ''),
+  );
   $form['api_keys']['indicia_bing_api_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Bing API Key'),
@@ -343,6 +353,7 @@ function indicia_configuration_form_submit($form, &$form_state) {
   if (!empty($form_state['values']['indicia_password']))
     variable_set('indicia_password', $form_state['values']['indicia_password']);
   variable_set('indicia_geoplanet_api_key', $form_state['values']['indicia_geoplanet_api_key']);
+  variable_set('indicia_google_api_key', $form_state['values']['indicia_google_api_key']);
   variable_set('indicia_bing_api_key', $form_state['values']['indicia_bing_api_key']);
   variable_set('indicia_map_centroid_lat', $form_state['values']['indicia_map_centroid_lat']);
   variable_set('indicia_map_centroid_long', $form_state['values']['indicia_map_centroid_long']);
