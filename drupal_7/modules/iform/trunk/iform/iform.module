@@ -1415,6 +1415,7 @@ function iform_variable_info($options) {
  * @return boolean TRUE if update needed else FALSE.
  */
 function iform_needs_update() {
+  include_once DRUPAL_ROOT . "/includes/install.inc";
   $version = drupal_get_installed_schema_version('iform');
   if($version > 0 && $version < 7100) {
     // Have to run update before iform_load() query can execute.
