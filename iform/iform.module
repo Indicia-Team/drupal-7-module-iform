@@ -1415,17 +1415,21 @@ function iform_variable_info($options) {
  * @return boolean TRUE if update needed else FALSE.
  */
 function iform_needs_update() {
-  include_once DRUPAL_ROOT . "/includes/install.inc";
-  $version = drupal_get_installed_schema_version('iform');
-  if($version > 0 && $version < 7100) {
-    // Have to run update before iform_load() query can execute.
-    $message = t('The IForm module needs you to run '
-      . '<a href="@url">updates</a> now.', array('@url' => url('update.php')));
-    drupal_set_message($message, 'warning', FALSE);
-    return TRUE;
+  $needs_update = &drupal_static(__FUNCTION__);
+  if (!isset($needs_update)) {
+    include_once DRUPAL_ROOT . "/includes/install.inc";
+    $version = drupal_get_installed_schema_version('iform');
+    if($version > 0 && $version < 7100) {
+      // Have to run update before iform_load() query can execute.
+      $message = t('The IForm module needs you to run '
+        . '<a href="@url">updates</a> now.', array('@url' => url('update.php')));
+      drupal_set_message($message, 'warning', FALSE);
+      $needs_update = TRUE;
+    }
+    else {
+      $needs_update = FALSE;
+    }
   }
-  else {
-    return FALSE;
-  }
+  return $needs_update;
 
 }
