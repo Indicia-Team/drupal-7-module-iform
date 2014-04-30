@@ -1347,10 +1347,15 @@ function hostsite_set_page_title($title) {
  * @param array $params The params to add to the URL.
  */
 function hostsite_goto_page($path, $params=false) {
-  $opts=array();
-  if ($params)
-    $opts['query']=$params;
-  drupal_goto($path, $opts);
+  static $iform_redirected_to;
+  if ($path===$iform_redirected_to) {
+    drupal_set_message("Attempt to redirect to $path caused a redirect loop");
+  } else {
+    $opts=array();
+    if ($params)
+      $opts['query']=$params;
+    drupal_goto($path, $opts);
+  }
 }
 
 /**
