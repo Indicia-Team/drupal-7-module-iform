@@ -666,7 +666,7 @@ function iform_view($node, $view_mode) {
         $_POST['deleted']='t';
         $msg = lang::get('The record has been deleted.');
       } else
-        $msg = '';
+        $msg = lang::get('Thank you. Your records have been saved to the database.');
       // Ask the form to submit itself.
       try {
         // attach the path to the input form. It'll just get skipped if we are not posting a sample.
@@ -704,10 +704,7 @@ function iform_view($node, $view_mode) {
           if (is_array($response) && array_key_exists('success', $response) &&
               array_key_exists('redirect_on_success', $args) && $args['redirect_on_success']) {
             if (!isset($args['message_after_save']) || $args['message_after_save']) {
-              // use lang::get rather than t() here because this message is displayed to the recorders, 
-              // and therefore it must be possible to change the English language version as well as other
-              // language translations
-              drupal_set_message(lang::get('Thank you. Your records have been saved to the database.'));
+              drupal_set_message($msg);
             }
             $parts = explode('?', $args['redirect_on_success'], 2);
             $url = array_shift($parts); // first item removed from array
@@ -734,7 +731,7 @@ function iform_view($node, $view_mode) {
           }
           elseif (!isset($args['message_after_save']) || $args['message_after_save'] || !array_key_exists('success', $response)) {
             // This dumps errors, and/or a success message if no redirection.
-            $r .= data_entry_helper::dump_errors($response, true, $msg);
+            $r .= data_entry_helper::dump_errors($response, true);
           }
         }
       }
