@@ -185,7 +185,7 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
   );
   // Add any module declared additional iform variables to the settings form. Extra variables only 
   // visible after install, as they may need a website connection
-  if (!defined('MAINTENANCE_MODE') || MAINTENANCE_MODE != 'install') {
+  if ((!defined('MAINTENANCE_MODE') || MAINTENANCE_MODE != 'install')  && variable_get('indicia_website_id', false)) {
     $readAuth = data_entry_helper::get_read_auth(variable_get('indicia_website_id', 0), variable_get('indicia_password', ''));
     // Add any indicia variables declared by hook_variable_info
     global $language;
