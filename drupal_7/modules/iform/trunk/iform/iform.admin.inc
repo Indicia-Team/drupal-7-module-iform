@@ -283,7 +283,7 @@ function indicia_configuration_form_validate($form, &$form_state) {
     $urls = indicia_get_warehouse_urls($form_state);
     data_entry_helper::$base_url = $urls['base_url'];
     // clear the cache if the linked warehouse changes
-    if ($orig_warehouse_url !== $urls['base_url'])
+    if (variable_get('indicia_base_url', '') !== $urls['base_url'])
       data_entry_helper::clear_cache();
     $read_auth = data_entry_helper::get_read_auth($form_state['values']['indicia_website_id'], $form_state['values']['indicia_password']);
     $test = data_entry_helper::get_population_data(array(
@@ -342,7 +342,6 @@ function _indicia_form_values_from_sref_systems($systems) {
 
 
 function indicia_configuration_form_submit($form, &$form_state) {
-  $orig_warehouse_url = variable_get('indicia_base_url', '');
   variable_set('indicia_warehouse', $form_state['values']['indicia_warehouse']);
   $urls = indicia_get_warehouse_urls($form_state);
   variable_set('indicia_base_url', $urls['base_url']);
@@ -362,7 +361,7 @@ function indicia_configuration_form_submit($form, &$form_state) {
   global $language;
   $vars = module_invoke_all('variable_info', array("language" => $language));  
   foreach ($vars as $var=>$config) {
-    if ($config['addToIndiciaSettingsPage'])
+    if ($config['addToIndiciaSettingsPage'] && isset($form_state['values'][$var]))
       variable_set($var, $form_state['values'][$var]);
   }
   $systems = _indicia_sref_systems_from_form($form_state['values']);
