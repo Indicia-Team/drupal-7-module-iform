@@ -1229,7 +1229,7 @@ function hostsite_get_user_field($field, $default=false, $array=false, $uid=fals
   if ($fieldinfo) {
     if ($fielddef['cardinality']==='1' || $fielddef['cardinality']===1) {
       // a single value
-      return check_plain($fieldinfo[0]['value']);
+      return $fieldinfo[0]['value'];
     }
     else {
       // a list of values
@@ -1263,7 +1263,8 @@ function hostsite_set_user_field($field, $data) {
     $account = user_load($user->uid);
     if (!isset($account->$fieldname))
       return FALSE;
-    $account->$fieldname[$account->language][0]['value'] = $data;
+    $language = $account->language ? $account->language : 'und';
+    $account->$fieldname = array($language=>array(array('value' => $data)));
     $info = field_info_field($fieldname);
     $fields = array($info['id']);
      
