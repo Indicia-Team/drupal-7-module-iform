@@ -1264,7 +1264,10 @@ function hostsite_set_user_field($field, $data) {
     if (!isset($account->$fieldname))
       return FALSE;
     $language = $account->language ? $account->language : 'und';
-    $account->$fieldname = array($language=>array(array('value' => $data)));
+    if (!empty($account->$fieldname[$language]))
+      $account->$fieldname[$language][0]['value'] = $data;
+    else
+      $account->$fieldname[$language]=array(array('value' => $data));
     $info = field_info_field($fieldname);
     $fields = array($info['id']);
      
