@@ -405,8 +405,10 @@ function iform_menu() {
   $items['admin/config/iform'] = array(
     'title' => 'IForm',
     'description' => 'Configuration for the IForm module.',
-    'page callback' => 'iform_settings',
-    'access arguments' => array('create iform'),
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('access administration pages'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
     'position' => 'right'
   );
   $items['admin/config/iform/settings'] = array(
@@ -414,7 +416,6 @@ function iform_menu() {
     'description' => 'Settings page for the IForm module.',
     'page callback' => 'iform_settings',
     'access arguments' => array('create iform'),
-    'type' => MENU_NORMAL_ITEM,
     'weight' => 0
   );
   // Create a tab to display the admin panel.
@@ -423,7 +424,6 @@ function iform_menu() {
     'description' => 'Administration tasks for the IForm module.',
     'page callback' => 'iform_admin_tasks',
     'access arguments' => array('create iform'),
-    'type' => MENU_NORMAL_ITEM,
     'weight' => 1
   );
   // Create a tab to display the diagnostics panel.
@@ -432,7 +432,6 @@ function iform_menu() {
     'description' => 'Run a configuration check for the IForm module.',
     'page callback' => 'iform_diagnostics',
     'access arguments' => array('create iform'),
-    'type' => MENU_NORMAL_ITEM,
     'weight' => 2
   );
   $items['admin/structure/features/indicia'] = array(
@@ -441,7 +440,6 @@ function iform_menu() {
         'site specific settings for the forms.',
     'page callback' => 'iform_features_review',
     'access arguments' => array('create iform'),
-    'type' => MENU_LOCAL_TASK,
     'weight' => 1
   );
   // declare a callback for ajax requests, that any prebuilt form can hook into to provide
