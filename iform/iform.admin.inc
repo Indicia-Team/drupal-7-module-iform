@@ -206,27 +206,37 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
           '#description'=>$config['description'],
           '#default_value'=>variable_get($var, '')
         );
-        if (isset($matches['list']) || isset($matches['table'])) {
-          if (isset($matches['list'])) {
-            $rows = data_entry_helper::get_population_data(array(
-              'table' => 'termlists_term',
-              'extraParams' => $readAuth + array('termlist_external_key' => 'indicia:' . $matches['list'])
-            ));
-            $captionField='term';
+        try {
+          // output buffer used to catch and discard errors as we'll handle them ourselves and don't want them on screen.
+          ob_start();
+          if (isset($matches['list']) || isset($matches['table'])) {
+            if (isset($matches['list'])) {
+              $rows = data_entry_helper::get_population_data(array(
+                'table' => 'termlists_term',
+                'extraParams' => $readAuth + array('termlist_external_key' => 'indicia:' . $matches['list'])
+              ));
+              $captionField='term';
+            }
+            else {
+              $rows = data_entry_helper::get_population_data(array(
+                'table' => $matches['table'],
+                'extraParams' => $readAuth,
+                'columns' => 'id,'.$matches['caption']
+              ));
+              $captionField=$matches['caption'];
+            }
+            $options = array('' => t('<please select>'));
+            foreach ($rows as $row) {
+              $options[$row['id']] = $row[$captionField];
+            }
+            $ctrls[$var]['#options'] = $options;
           }
-          else {
-            $rows = data_entry_helper::get_population_data(array(
-              'table' => $matches['table'],
-              'extraParams' => $readAuth,
-              'columns' => 'id,'.$matches['caption']
-            ));
-            $captionField=$matches['caption'];
-          }
-          $options = array('' => t('<please select>'));
-          foreach ($rows as $row) {
-            $options[$row['id']] = $row[$captionField];
-          }
-          $ctrls[$var]['#options'] = $options;
+          ob_end_clean();
+        } catch (Exception $e) {
+          ob_end_clean();
+          watchdog('iform', 'Error loading iform settings for '.$config['title'].': '.$e->getMessage());
+          drupal_set_message("Unable to load the control $config[title], probably because the warehouse connection is not correctly configured. ");
+          unset($ctrls[$var]);
         }
       }
     }
@@ -275,8 +285,14 @@ mapInitialisationHooks.push(function(div) {
   return $form;
 }
 
+/** 
+ * Implement hook_validate.
+ * Checks the warehouse configuration settings are valid.
+ * @param array $form
+ * @param array $form_state
+ */
 function indicia_configuration_form_validate($form, &$form_state) {
-  if ($form_state['values']['indicia_warehouse']=='other' && empty($form_state['values']['indicia_base_url']))
+  if ($form_state['values']['indicia_warehouse']==='' || ($form_state['values']['indicia_warehouse']=='other' && empty($form_state['values']['indicia_base_url'])))
     form_set_error('indicia_website_id', t('Please supply a warehouse URL for connection to Indicia, or select a pre-configured connection.'));
   elseif (!empty($form_state['values']['indicia_password'])) {
     // test the connection to the warehouse
@@ -286,6 +302,8 @@ function indicia_configuration_form_validate($form, &$form_state) {
     if (variable_get('indicia_base_url', '') !== $urls['base_url'])
       data_entry_helper::clear_cache();
     $read_auth = data_entry_helper::get_read_auth($form_state['values']['indicia_website_id'], $form_state['values']['indicia_password']);
+    drupal_set_message($form_state['values']['indicia_website_id'] . '  ' . $form_state['values']['indicia_password']);
+    drupal_set_message(print_r($read_auth, true));
     $test = data_entry_helper::get_population_data(array(
       'table' => 'survey',
       'extraParams' => $read_auth + array('limit' => 0),
