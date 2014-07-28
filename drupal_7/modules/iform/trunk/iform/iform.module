@@ -676,6 +676,8 @@ function iform_view($node, $view_mode) {
         unset($s);
       }
       // And allow the form to dynamically set the destination after post
+      if (!empty($_POST['redirect_on_success']))
+        $args['redirect_on_success'] = $_POST['redirect_on_success'];
       if (method_exists('iform_' . $node->iform, 'get_redirect_on_success')) {
         $redirect = call_user_func(array('iform_' . $node->iform, 'get_redirect_on_success'), $_POST, $args);
         if (!empty($redirect))
@@ -780,9 +782,11 @@ $('.ui-state-default').live('mouseout', function() {
     // Link in the default site css
     drupal_add_css(iform_media_folder_path() . 'css/default_site.css');
 
-    // Link in the custom css file if present. Drupal skips it if missing.
-    drupal_add_css(iform_client_helpers_path() . 'prebuilt_forms/css/' . $node->iform . '.css', array('preprocess'=>FALSE));
-    drupal_add_css(iform_client_helpers_path() . 'prebuilt_forms/css/node.' . $node->nid . '.css', array('preprocess'=>FALSE));
+    // Link in the custom css file if present.
+    if (file_exists(iform_client_helpers_path() . 'prebuilt_forms/css/' . $node->iform . '.css'))
+      drupal_add_css(iform_client_helpers_path() . 'prebuilt_forms/css/' . $node->iform . '.css', array('preprocess'=>FALSE));
+    if (file_exists(iform_client_helpers_path() . 'prebuilt_forms/css/node.' . $node->nid . '.css'))
+      drupal_add_css(iform_client_helpers_path() . 'prebuilt_forms/css/node.' . $node->nid . '.css', array('preprocess'=>FALSE));
     if (!empty($args['additional_css'])) {
       $cssFiles=data_entry_helper::explode_lines($args['additional_css']);
       foreach ($cssFiles as $file) {
@@ -1261,11 +1265,13 @@ function hostsite_set_user_field($field, $data) {
     $account = user_load($user->uid);
     if (!isset($account->$fieldname))
       return FALSE;
+    $field = $account->$fieldname;
     $language = $account->language ? $account->language : 'und';
-    if (!empty($account->$fieldname[$language]))
-      $account->$fieldname[$language][0]['value'] = $data;
+    if (isset($field[$language]))
+      $field[$language][0]['value'] = $data;
     else
-      $account->$fieldname[$language]=array(array('value' => $data));
+      $field[$language]=array(array('value' => $data));
+    $account->$fieldname = $field;
     $info = field_info_field($fieldname);
     $fields = array($info['id']);
      
