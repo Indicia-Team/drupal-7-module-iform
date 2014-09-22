@@ -1324,7 +1324,7 @@ function hostsite_show_message($msg, $type='status') {
  */
 function hostsite_set_breadcrumb($breadcrumb) {
   // convert to Drupal style breadcrumb array
-  $drupal_breadcrumb = array(lang::get('Home') => '<front>');
+  $drupal_breadcrumb = array(l(lang::get('Home'),'<front>'));
   foreach ($breadcrumb as $label => $path) {
     $drupal_breadcrumb[] = l(lang::get($label), $path);
   }
