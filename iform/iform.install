@@ -91,13 +91,19 @@ function iform_uninstall() {
 }
 
 /**
-* This update add fields to support recording groups.
+* This update adds fields to support recording groups.
 */
 function iform_update_7100() {
-  $schema = iform_schema();
-  $spec = $schema['iform']['fields']['available_for_groups'];
-  db_add_field('iform', 'available_for_groups', $spec);
-  $spec = $schema['iform']['fields']['limit_to_group_id'];
-  db_add_field('iform', 'limit_to_group_id', $spec);
-  return t('New recording group support fields added to the Indicia module');
+  if (!db_field_exists('iform', 'available_for_groups')) {
+    $schema = iform_schema();
+    $spec = $schema['iform']['fields']['available_for_groups'];
+    db_add_field('iform', 'available_for_groups', $spec);
+    $spec = $schema['iform']['fields']['limit_to_group_id'];
+    db_add_field('iform', 'limit_to_group_id', $spec);
+    return t('New recording group support fields added to the Indicia module');
+  }
+  else {
+    // If upgrading from D6 these may have been added by iform_update_6120
+    return t('New recording group support fields already exist.');
+  }
 }
