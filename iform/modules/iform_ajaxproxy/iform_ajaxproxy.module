@@ -287,6 +287,9 @@ function iform_ajaxproxy_proxy() {
           $structure = array('model' => 'filter', 'subModels' => array('filters_user' => array('fk' => 'filter_id')));
           $Model = data_entry_helper::build_submission($_POST, $structure);
         break;
+      case "groups_location":
+          $Model = data_entry_helper::wrap($_POST, 'groups_location');
+        break;
       case "groups_user":
           $Model = data_entry_helper::wrap($_POST, 'groups_user');
         break;
