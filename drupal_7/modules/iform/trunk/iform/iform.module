@@ -1338,7 +1338,7 @@ function hostsite_set_breadcrumb($breadcrumb) {
  * @param string $title The translated page title.
  */
 function hostsite_set_page_title($title) {
-  drupal_set_title($title);
+  drupal_set_title(filter_xss($title), PASS_THROUGH);
 }
 
 /**
