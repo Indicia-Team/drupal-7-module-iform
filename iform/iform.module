@@ -383,6 +383,8 @@ function iform_load($nodes) {
       $node->available_for_groups=$record->available_for_groups;
       $node->limit_to_group_id=$record->limit_to_group_id;
       $params=json_decode($record->params, TRUE);
+      if (function_exists('iform_user_ui_options_preprocess_iform'))
+        iform_user_ui_options_preprocess_iform($params);
       $node->iform = $record->iform;
       // null string is stored if the iform has no parameters to store
       if ($record->params!=='null') {
