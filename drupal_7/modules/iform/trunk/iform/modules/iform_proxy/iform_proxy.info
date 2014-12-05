@@ -1,5 +1,0 @@
-; $Id$
-name = Indicia Proxy
-description = A module allowing proxying of Indicia map calls.
-core = 6.x
-package = "Indicia"
