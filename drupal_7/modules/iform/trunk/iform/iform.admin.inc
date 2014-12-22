@@ -379,7 +379,7 @@ function indicia_configuration_form_submit($form, &$form_state) {
   global $language;
   $vars = module_invoke_all('variable_info', array("language" => $language));  
   foreach ($vars as $var=>$config) {
-    if ($config['addToIndiciaSettingsPage'] && isset($form_state['values'][$var]))
+    if (!empty($config['addToIndiciaSettingsPage']) && $config['addToIndiciaSettingsPage'] && isset($form_state['values'][$var]))
       variable_set($var, $form_state['values'][$var]);
   }
   $systems = _indicia_sref_systems_from_form($form_state['values']);
