@@ -288,10 +288,8 @@ mapInitialisationHooks.push(function(div) {
 /** 
  * Implement hook_validate.
  * Checks the warehouse configuration settings are valid.
- * @param array $form
- * @param array $form_state
  */
-function indicia_configuration_form_validate($form, &$form_state) {
+function indicia_configuration_form_validate() {
   if ($form_state['values']['indicia_warehouse']==='' || ($form_state['values']['indicia_warehouse']=='other' && empty($form_state['values']['indicia_base_url'])))
     form_set_error('indicia_website_id', t('Please supply a warehouse URL for connection to Indicia, or select a pre-configured connection.'));
   elseif (!empty($form_state['values']['indicia_password'])) {
@@ -302,8 +300,6 @@ function indicia_configuration_form_validate($form, &$form_state) {
     if (variable_get('indicia_base_url', '') !== $urls['base_url'])
       data_entry_helper::clear_cache();
     $read_auth = data_entry_helper::get_read_auth($form_state['values']['indicia_website_id'], $form_state['values']['indicia_password']);
-    drupal_set_message($form_state['values']['indicia_website_id'] . '  ' . $form_state['values']['indicia_password']);
-    drupal_set_message(print_r($read_auth, true));
     $test = data_entry_helper::get_population_data(array(
       'table' => 'survey',
       'extraParams' => $read_auth + array('limit' => 0),
