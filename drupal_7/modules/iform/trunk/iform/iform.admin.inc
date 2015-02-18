@@ -288,8 +288,10 @@ mapInitialisationHooks.push(function(div) {
 /** 
  * Implement hook_validate.
  * Checks the warehouse configuration settings are valid.
+ * @param array $form 		
+ * @param array $form_state
  */
-function indicia_configuration_form_validate() {
+function indicia_configuration_form_validate($form, $form_state) {
   if ($form_state['values']['indicia_warehouse']==='' || ($form_state['values']['indicia_warehouse']=='other' && empty($form_state['values']['indicia_base_url'])))
     form_set_error('indicia_website_id', t('Please supply a warehouse URL for connection to Indicia, or select a pre-configured connection.'));
   elseif (!empty($form_state['values']['indicia_password'])) {
