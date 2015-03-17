@@ -1214,14 +1214,17 @@ function iform_client_helpers_path() {
  */
 function hostsite_get_user_field($field, $default=false, $array=false, $uid=false) {
   global $user;
+  if ($field==='uid') 
+    return $uid===false ? $user->uid : $uid;
+  $account = $uid!==false ? user_load($uid) : $user;
   if ($field==='language' && isset($user->language))
-    return $user->language;
-  elseif ($field==='id' && isset($user->uid))
-    return $user->uid;
-  elseif ($field==='name' && isset($user->name))
-    return $user->name;
+    return $account->language;
+  elseif ($field==='id' && isset($account->uid))
+    return $account->uid;
+  elseif ($field==='name' && isset($account->name))
+    return $account->name;
   $fieldname = (substr($field, 0, 6)==='field_' ? '' : 'field_') . $field;
-  $account = user_load($uid ? $uid : $user->uid);
+  
   $fieldinfo = field_get_items('user', $account, $fieldname);
   $fielddef = field_info_field($fieldname);
   if ($fieldinfo) {
