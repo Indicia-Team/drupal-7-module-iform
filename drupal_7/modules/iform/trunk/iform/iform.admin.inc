@@ -5,7 +5,7 @@
 */
 
 /** 
- * A form definition for providing global condifuration options for Indicia. Used both in the installation 
+ * A form definition for providing global configuration options for Indicia. Used both in the installation
  * profile as an install task, and provided on the admin menu.
  */
 function iform_configuration_form($form, &$form_state, $url='', $submit_handler='') {
@@ -105,7 +105,7 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
     '#description' => t('The Google API provides the Places API text search, another option to lookup place names when you use the place search control. ' .
         'It references a global database of places and returns the list of possibilities with their spatial references ' .
         'to Indicia. To obtain your own API key for the Google API, please visit <a target="_blank" href="https://code.google.com/apis/console">' .
-        'the Google APIS Console</a>. '),
+        'the Google APIs Console</a>. '),
     '#required' => FALSE,
     '#default_value' => variable_get('indicia_google_api_key', isset(helper_config::$google_api_key) ? helper_config::$google_api_key : ''),
   );
@@ -337,6 +337,8 @@ function _indicia_sref_systems_from_form($values) {
 /** 
  * Convert the stored value for indicia_spatial_systems into values to use as defaults for controls on the form.
  * @param array $systems The list of spatial systems to map to. Any others go into the array['other'] part of the response.
+ * @return array Associative array containing entries called list (an array of available systems) and other
+ * (an array of non-standard EPSG codes).
  */
 function _indicia_form_values_from_sref_systems($systems) {
   $r = array(
@@ -406,6 +408,8 @@ function indicia_get_warehouse_urls($form_state) {
         );
       }
     }
+    // if not found, something went wrong
+    throw new exception('Could not find configuration for selected warehouse.');
   }
 }
 
