@@ -1224,27 +1224,17 @@ function hostsite_get_user_field($field, $default=false, $array=false, $uid=fals
   elseif ($field==='name' && isset($account->name))
     return $account->name;
   $fieldname = (substr($field, 0, 6)==='field_' ? '' : 'field_') . $field;
-  
-  $fieldinfo = field_get_items('user', $account, $fieldname);
   $fielddef = field_info_field($fieldname);
-  if ($fieldinfo) {
-    if ($fielddef['cardinality']==='1' || $fielddef['cardinality']===1) {
+  $user_wrapper = entity_metadata_wrapper('user', $account);
+  if (isset($user_wrapper->$fieldname)) {
+    $value = $user_wrapper->$fieldname->value();
+    if ($fielddef['cardinality']==='1' || $fielddef['cardinality']===1)
       // a single value
-      return $fieldinfo[0]['value'];
-    }
-    else {
-      // a list of values
-      $r = array();
-      foreach ($fieldinfo as $val) 
-        $r[] = $val['value'];
-      if ($array) 
-        return $r;
-      else
-        return serialize($r);
-    }
-  }
-  else
-    // value not found
+      return $value;
+    else
+      // a list, either as an array or serialized as a string
+      return $array ? $value : serialize($value);
+  } else
     return $default;
 }
 
