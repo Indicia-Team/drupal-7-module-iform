@@ -527,7 +527,7 @@ function iform_features_review() {
     unset($form);
     // no need to do the params form if needs review < 3 - it has already been done
     if ($row['needs_review']==3)
-      $form .= form_helper::prebuilt_form_params_form(array(
+      $form = form_helper::prebuilt_form_params_form(array(
           'form' => $row['iform'],
           'currentSettings' => array(),
           'readAuth' => $readAuth,
@@ -742,6 +742,8 @@ function iform_view($node, $view_mode) {
     // Make buttons have a hover effect
     data_entry_helper::$javascript .=  "indiciaFns.enableHoverEffect();\n";
     _iform_apply_variables_to_args($args);
+    // preferred location for custom node configuration files now under Drupal files folder
+    $filePath = variable_get('file_public_path', conf_path() . '/files');
     // A drupal theme can override the templates
     if (function_exists('drupal_get_path') && file_exists(drupal_get_path('theme',$GLOBALS['theme']) . '/indicia.templates.php'))
       require drupal_get_path('theme',$GLOBALS['theme']) . '/indicia.templates.php';
@@ -752,6 +754,8 @@ function iform_view($node, $view_mode) {
       require "$helperPath/prebuilt_forms/templates/$node->iform.php";
     if (file_exists("$helperPath/prebuilt_forms/templates/node.$node->nid.php")) 
       require "$helperPath/prebuilt_forms/templates/node.$node->nid.php";
+    if (file_exists("$filePath/indicia/templates/node.$node->nid.php"))
+      require "$filePath/indicia/templates/node.$node->nid.php";
     // link in custom additional template files
     if (!empty($args['additional_templates'])) {
       $templateFiles=data_entry_helper::explode_lines($args['additional_templates']);
@@ -783,6 +787,8 @@ function iform_view($node, $view_mode) {
       drupal_add_css(iform_client_helpers_path() . 'prebuilt_forms/css/' . $node->iform . '.css', array('preprocess'=>FALSE));
     if (file_exists(iform_client_helpers_path() . 'prebuilt_forms/css/node.' . $node->nid . '.css'))
       drupal_add_css(iform_client_helpers_path() . 'prebuilt_forms/css/node.' . $node->nid . '.css', array('preprocess'=>FALSE));
+    if (file_exists("$filePath/indicia/css/node.$node->nid.css"))
+      drupal_add_css("$filePath/indicia/css/node.$node->nid.css", array('preprocess'=>FALSE));
     if (!empty($args['additional_css'])) {
       $cssFiles=data_entry_helper::explode_lines($args['additional_css']);
       foreach ($cssFiles as $file) {
@@ -799,7 +805,8 @@ function iform_view($node, $view_mode) {
     // Link in the specific node's custom js file if present.
     if (file_exists("$helperPath/prebuilt_forms/js/node.$node->nid.js"))
       drupal_add_js(iform_client_helpers_path() . "prebuilt_forms/js/node.$node->nid.js", array('preprocess'=>FALSE));
-
+    if (file_exists("$filePath/indicia/js/node.$node->nid.js"))
+      drupal_add_css("$filePath/indicia/js/node.$node->nid.js", array('preprocess'=>FALSE));
     ob_end_clean();
     $node->content['iform'] = array(
       '#markup' => $r,
