@@ -806,7 +806,7 @@ function iform_view($node, $view_mode) {
     if (file_exists("$helperPath/prebuilt_forms/js/node.$node->nid.js"))
       drupal_add_js(iform_client_helpers_path() . "prebuilt_forms/js/node.$node->nid.js", array('preprocess'=>FALSE));
     if (file_exists("$filePath/indicia/js/node.$node->nid.js"))
-      drupal_add_css("$filePath/indicia/js/node.$node->nid.js", array('preprocess'=>FALSE));
+      drupal_add_js("$filePath/indicia/js/node.$node->nid.js", array('preprocess'=>FALSE));
     ob_end_clean();
     $node->content['iform'] = array(
       '#markup' => $r,
