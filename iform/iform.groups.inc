@@ -74,7 +74,7 @@ function iform_join_group($title='') {
         }
       }
       else {
-        drupal_set_message(t("Welcome back to the @group.", array('@group' => $group['title'])));
+        drupal_set_message(t("Welcome back to the @group.", array('@group' => iform_readable_group_title($group))));
         $showJoinMessage=false;
       }
     }
@@ -100,7 +100,7 @@ function iform_show_group_join_success($group, $auth, $showJoinMessage=true, $gr
     'table'=>'group_page',
     'extraParams' => $auth['read'] + array('group_id' => $group['id'], 'query' => json_encode(array('in'=>array('administrator'=>array('', 'f')))))
   ));
-  $welcome = t("Welcome to @group!", array('@group' => $group['title']));
+  $welcome = t("Welcome to the @group!", array('@group' => iform_readable_group_title($group)));
   if (count($pageData)===1) {
     // Only one page so go straight to it
     if ($showJoinMessage)
@@ -110,13 +110,16 @@ function iform_show_group_join_success($group, $auth, $showJoinMessage=true, $gr
     // Multiple pages, let the user choose
     $intro = '';
     $r = '';
+
     if ($showJoinMessage) {
       hostsite_set_page_title($welcome);
-      $intro = t("You've successfully joined @group.", array('@group' => $group['title'])) . ' ';
+      $intro = t("You've successfully joined the @group on @site.",
+        array('@group' => iform_readable_group_title($group), '@site' => variable_get('site_name'))) . ' ';
     }
     $path = data_entry_helper::get_uploaded_image_folder();
     $r .= empty($group['logo_path']) ? '' : "<img style=\"width: 20%; float: left; padding: 0 5% 5%;\" alt=\"Logo\" src=\"$path$group[logo_path]\"/>";
-    $r .= '<div style="float: left; width: 70%;"><p>' . $intro . t('You can access the following pages for the @group', array('@group' => $group['title'])) . ':</p>';
+    $r .= '<div style="float: left; width: 70%;"><p>' . $intro . t('You can access the following pages for the @group',
+        array('@group' => iform_readable_group_title($group))) . ':</p>';
     $r .= '<ul>';
     if (!empty($group_home_path))
       $r .= '<li><a href="'.hostsite_get_url($group_home_path, array('group_id'=>$group['id'])).'">'.lang::get("Visit the $group[title] home page").'<a></li>';
@@ -127,6 +130,19 @@ function iform_show_group_join_success($group, $auth, $showJoinMessage=true, $gr
     $r .= '</ul></div>';
     return $r;
   }
+}
+
+/**
+ * Take account of the different way group titles are written to make it easier to create readable
+ * sentences about a group. Basically adds " group" to the end of the group title if not already
+ * there.
+ * @param array $group Group record loaded from database
+ */
+function iform_readable_group_title($group) {
+  $r = $group['title'];
+  if (!preg_match('/ ' . t('group') . '$/', $r))
+    $r .= ' ' . t('group');
+  return $r;
 }
 
 /**
@@ -158,8 +174,8 @@ function iform_join_public_group($group, $writeAuth, $indiciaUserId, $groupsUser
     return true;
   }
   else {
-    drupal_set_message(t("An error occurred whilst trying to join @group.",
-      array('@group'=>$group['title'])), 'warning');
+    drupal_set_message(t("An error occurred whilst trying to join the @group.",
+      array('@group'=>iform_readable_group_title($group))), 'warning');
     watchdog('groups', "An error occurred whilst trying to join $group[title] for {$user->name}.");
     watchdog('groups', var_export($r, true));
     return false;

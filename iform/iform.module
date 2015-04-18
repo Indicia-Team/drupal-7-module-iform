@@ -483,6 +483,7 @@ function iform_form_user_login_alter(&$form, &$form_state) {
       'caching' => false
     ));
     if (count($groups)===1) {
+      module_load_include('inc', 'iform', 'iform.groups');
       $group = $groups[0];
       $link = url("join/$group[url_safe_title]", array('absolute' => TRUE));
       $path = data_entry_helper::get_uploaded_image_folder();
@@ -490,11 +491,11 @@ function iform_form_user_login_alter(&$form, &$form_state) {
       $form['intro'] = array(
         '#markup' => "<fieldset><legend>$group[title]</legend>$img<div style=\"float: left; width: 70%\"><p>" .
           t('You\'ve followed a link to join the @group. This needs you to log in to @site.',
-            array('@group' => $group['title'], '@site' => variable_get('site_name'))) . '</p><ul>' .
+            array('@group' => iform_readable_group_title($group), '@site' => variable_get('site_name'))) . '</p><ul>' .
           '<li>' . t('If you already have an account on @site, then log in using the form below.', array('@site' => variable_get('site_name'))) . '</li>' .
           '<li>' . t('If this is your first time using @site, then click the Create new account link and follow the steps to register. Once you have ' .
-            'confirmed your account please visit the join link you just used (<a href="@link">@link<a/>) to join the @group.',
-            array('@group' => $group['title'], '@site' => variable_get('site_name'), '@link' => $link)) .'</li></ul></div></fieldset>',
+            'confirmed your account please visit the join link you just used (<a href="@link">@link</a>) to join the @group.',
+            array('@group' => iform_readable_group_title($group), '@site' => variable_get('site_name'), '@link' => $link)) .'</li></ul></div></fieldset>',
         '#weight' => -50
       );
     }
