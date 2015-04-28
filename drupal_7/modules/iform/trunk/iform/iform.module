@@ -1272,8 +1272,13 @@ function hostsite_get_user_field($field, $default=false, $array=false, $uid=fals
   if ($field==='uid') 
     return $uid===false ? $user->uid : $uid;
   $account = $uid!==false ? user_load($uid) : $user;
-  if ($field==='language' && isset($user->language))
+  // Only load the account's language if inspecting another user, else use the UI language. 
+  if ($field==='language' && isset($account->language) && $uid && $user->uid!==$uid)
     return $account->language;
+  else if ($field==='language') {
+    global $language;
+    return $language->language;
+  }
   elseif ($field==='id' && isset($account->uid))
     return $account->uid;
   elseif ($field==='name' && isset($account->name))
@@ -1292,7 +1297,6 @@ function hostsite_get_user_field($field, $default=false, $array=false, $uid=fals
   } else
     return $default;
 }
-
 
 /**
  * Function that allows Indicia code to hook into the Drupal user profile to set a field value, without
