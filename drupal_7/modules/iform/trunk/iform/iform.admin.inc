@@ -199,13 +199,14 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
         elseif (isset($config['subtype']) && preg_match('/^(?P<table>[a-z_]+)\.(?P<caption>[a-z_]+)/', $config['subtype'], $matches))
           $type = 'select';  
         else
-          $type = 'textfield';
+          $type = ($config['type'] == 'radios' ? 'radios' : 'textfield');
         $ctrls[$var] = array(
           '#type'=>$type,
           '#title'=>$config['title'],
           '#description'=>$config['description'],
-          '#default_value'=>variable_get($var, '')
+          '#default_value'=>variable_get($var, isset($config['default']) ? $config['default'] : '')
         );
+        if (isset($config['options'])) $ctrls[$var]['#options'] = $config['options'];
         try {
           // output buffer used to catch and discard errors as we'll handle them ourselves and don't want them on screen.
           ob_start();
