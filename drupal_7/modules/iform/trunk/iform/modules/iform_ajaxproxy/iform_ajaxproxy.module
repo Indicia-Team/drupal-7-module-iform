@@ -122,6 +122,9 @@ function iform_ajaxproxy_proxy() {
   $writeTokens = array('nonce'=>$nonce, 'auth_token' => sha1($nonce.":".$conn['password']));
   if ($index==='single_verify') {
     iform_ajaxproxy_single_verify($writeTokens);
+  }
+  elseif ($index==='single_verify_sample') {
+    iform_ajaxproxy_single_verify($writeTokens, 'single_verify_sample');
   } else {
     switch ($index) {
       case "sample":
@@ -194,7 +197,6 @@ function iform_ajaxproxy_proxy() {
         $_POST['nonce'] = $nonce;
         $media_id = 'upload_file';
           // At the moment this only needs to handle a single media file at a time
-          $file = array();
           if (array_key_exists($media_id, $_FILES)) { //there is a single upload field
             if($_FILES[$media_id]['name'] != '') { //that field has a file
               $file = $_FILES[$media_id];
@@ -317,8 +319,8 @@ function iform_ajaxproxy_proxy() {
  * Special case handler for the single_verify method, since this goes to the data_utils service for 
  * performance reasons.
  */
-function iform_ajaxproxy_single_verify($writeTokens) {
-  $request = data_entry_helper::$base_url."index.php/services/data_utils/single_verify";
+function iform_ajaxproxy_single_verify($writeTokens, $method='single_verify') {
+  $request = data_entry_helper::$base_url."index.php/services/data_utils/$method";
   $postargs = data_entry_helper::array_to_query_string(array_merge($_POST, $writeTokens), true);
   $response = data_entry_helper::http_post($request, $postargs);
   // The response should be in JSON if it worked
