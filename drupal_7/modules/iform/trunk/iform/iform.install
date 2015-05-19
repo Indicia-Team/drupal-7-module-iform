@@ -107,3 +107,14 @@ function iform_update_7100() {
     return t('New recording group support fields already exist.');
   }
 }
+
+/**
+ * Enable the entity module.
+ */
+function iform_update_7103() {
+  $enabled = module_enable(array('entity'));
+  if (!$enabled) {
+    throw new DrupalUpdateException('The Entity API module is now required by Indicia. ' .
+        'Please install and enable this module.');
+  }
+}
