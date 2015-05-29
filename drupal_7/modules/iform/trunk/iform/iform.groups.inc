@@ -98,7 +98,11 @@ function iform_join_group($title='') {
 function iform_show_group_join_success($group, $auth, $showJoinMessage=true, $group_home_path='', $groups_list_path='') {
   $pageData = data_entry_helper::get_population_data(array(
     'table'=>'group_page',
-    'extraParams' => $auth['read'] + array('group_id' => $group['id'], 'query' => json_encode(array('in'=>array('administrator'=>array('', 'f')))))
+    'extraParams' => $auth['read'] + array(
+        'group_id' => $group['id'],
+        'query' => json_encode(array('in'=>array('administrator'=>array('', 'f')))),
+        'orderby' => 'caption'
+      )
   ));
   $welcome = t("Welcome to the @group!", array('@group' => iform_readable_group_title($group)));
   if (count($pageData)===1) {
