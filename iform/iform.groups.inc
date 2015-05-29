@@ -121,8 +121,8 @@ function iform_show_group_join_success($group, $auth, $showJoinMessage=true, $gr
         array('@group' => iform_readable_group_title($group), '@site' => variable_get('site_name'))) . ' ';
     }
     $path = data_entry_helper::get_uploaded_image_folder();
-    $r .= empty($group['logo_path']) ? '' : "<img style=\"width: 20%; float: left; padding: 0 5% 5%;\" alt=\"Logo\" src=\"$path$group[logo_path]\"/>";
-    $r .= '<div style="float: left; width: 70%;"><p>' . $intro . t('You can access the following pages for the @group',
+    $r .= empty($group['logo_path']) ? '' : "<img style=\"width: 30%; float: left; padding: 0 5% 5%;\" alt=\"Logo\" src=\"$path$group[logo_path]\"/>";
+    $r .= '<div style="float: left; width: 60%;"><p>' . $intro . t('You can access the following pages for the @group',
         array('@group' => iform_readable_group_title($group))) . ':</p>';
     $r .= '<ul>';
     if (!empty($group_home_path))
