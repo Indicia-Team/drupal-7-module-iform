@@ -6,8 +6,7 @@
  * Adds radio buttons to the end of the preferences tab of a user account to allow the user to select from any
  * available user interface configuration choices.
  */
-function iform_user_ui_options_form_user_profile_form_alter(&$form, &$form_state) {
-  global $user;
+function iform_user_ui_options_form_user_profile_form_alter(&$form) {
   $currentOpts = json_decode(hostsite_get_user_field('iform_ui_options', '{}'), TRUE);
   $config = iform_user_ui_options_load_config(); 
   if (count($config)>0) {
