@@ -92,6 +92,7 @@ function iform_user_ui_options_preprocess_iform(&$params) {
   // use a static to hold the params, in case loading multiple nodes, e.g. when building the menu
   static $paramsToApply;
   if (!isset($paramsToApply)) {
+    iform_load_helpers(array('data_entry_helper'));
     data_entry_helper::$data['structureControlOverrides'] = array();
     $paramsToApply=array();
     $userOpts = json_decode(hostsite_get_user_field('iform_ui_options', '{}'), TRUE);
