@@ -1537,7 +1537,22 @@ function iform_tokens($type, $tokens, array $data = array(), array $options = ar
     foreach ($tokens as $name => $original) {
       switch ("$type:$name") {
         case 'current-page:full-url':
-          $replacements[$original] = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+          $uriParts = explode('?', $_SERVER['REQUEST_URI']);
+          if (count($uriParts)) {
+            parse_str($uriParts[1], $query);
+            // we need to remove sort and paging parameters as they cause search engines to excessively spider
+            foreach ($query as $key=>$value) {
+              if (strpos($key, 'orderby')===0 || strpos($key, 'sortdir')===0 || strpos($key, 'page')===0)
+                unset($query[$key]);
+            }
+            $uriParts[1] = data_entry_helper::array_to_query_string($query);
+          }
+          $arguments = explode('/', trim($uriParts[0], '/'));
+          if ($arguments[count($arguments)-1]==='logged-out')
+            array_pop($arguments);
+          $uriParts[0] = '/' . implode('/', $arguments);
+          $uri = implode('?', $uriParts);
+          $replacements[$original] = "http://$_SERVER[HTTP_HOST]$uri";
           break;
         case 'current-page:live-title':
           $replacements[$original] = drupal_get_title();
