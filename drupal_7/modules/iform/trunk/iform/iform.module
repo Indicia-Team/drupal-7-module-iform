@@ -1547,10 +1547,6 @@ function iform_tokens($type, $tokens, array $data = array(), array $options = ar
             }
             $uriParts[1] = data_entry_helper::array_to_query_string($query);
           }
-          $arguments = explode('/', trim($uriParts[0], '/'));
-          if ($arguments[count($arguments)-1]==='logged-out')
-            array_pop($arguments);
-          $uriParts[0] = '/' . implode('/', $arguments);
           $uri = implode('?', $uriParts);
           $replacements[$original] = "http://$_SERVER[HTTP_HOST]$uri";
           break;
