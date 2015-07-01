@@ -1486,3 +1486,71 @@ function iform_needs_update() {
   return $needs_update;
 
 }
+
+/**
+ * Implements hook_token_info.
+ * Extends the tokens available to support some tokens useful in the Indicia context,
+ * for example a full page URL including the query parameters or a page image that is
+ * dynamically set on pages that show record images. The following tokens are provided:
+ *
+ *   * [current-page:full-url] Full URL to the current page, including query parameters
+ *   * [current-page:live-title] Title of the current page, reflecting changes made when calling drupal_set_title.
+ *   * [current-page:best-image] Image for the page - normally the site logo, but can be overridden with a record
+ *     image for example.
+ *
+ * @return array
+ */
+function iform_token_info() {
+  $info = array();
+
+  // [node:view-count], [node:view-count:last-viewed]
+  $info['tokens']['current-page'] = array(
+    'full-url' => array(
+      'name' => t('Full URL'),
+      'description' => t('Full URL including the page query string parameters.')
+    ),
+    'live-title' => array(
+      'name' => t('Live title'),
+      'description' => t('Page title reflecting changes for dynamically generated pages.')
+    ),
+    'best-image' => array(
+      'name' => t('Best image'),
+      'description' => t('Either the site logo, or an image picked from the content to represent the page.')
+    ),
+  );
+
+  return $info;
+}
+
+/**
+ * Implement hook_tokens.
+ * Returns the values of tokens provided by the iform module.
+ * @param $type
+ * @param $tokens
+ * @param array $data
+ * @param array $options
+ * @return array
+ */
+function iform_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  $replacements = array();
+  if ($type == 'current-page' || $type==='node') {
+    foreach ($tokens as $name => $original) {
+      switch ("$type:$name") {
+        case 'current-page:full-url':
+          $replacements[$original] = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+          break;
+        case 'current-page:live-title':
+          $replacements[$original] = drupal_get_title();
+          break;
+        case 'current-page:best-image':
+          global $iform_content_image;
+          if (isset($iform_content_image))
+            $replacements[$original] = $iform_content_image;
+          else
+            $replacements[$original] = theme_get_setting('logo');
+          break;
+      }
+    }
+  }
+  return $replacements;
+}
