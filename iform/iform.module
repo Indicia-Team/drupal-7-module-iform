@@ -1635,8 +1635,8 @@ function iform_metatag_metatags_view_alter(&$output, $instance, $options) {
     global $iform_page_metadata;
     if (!empty($iform_page_metadata['latitude']) && !empty($iform_page_metadata['longitude'])) {
       $output['og:type']['#attached']['drupal_add_html_head'][0][0]['#value'] = 'place';
-      $output['og:latitude']['#attached']['drupal_add_html_head'][0][0]['#name'] = 'place:og:latitude';
-      $output['og:longitude']['#attached']['drupal_add_html_head'][0][0]['#name'] = 'place:og:longitude';
+      $output['og:latitude']['#attached']['drupal_add_html_head'][0][0]['#name'] = 'place:location:latitude';
+      $output['og:longitude']['#attached']['drupal_add_html_head'][0][0]['#name'] = 'place:location:longitude';
       unset($output['article:published_time']);
       unset($output['article:modified_time']);
     }
