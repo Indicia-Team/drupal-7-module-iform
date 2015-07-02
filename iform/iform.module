@@ -1502,23 +1502,37 @@ function iform_needs_update() {
  */
 function iform_token_info() {
   $info = array();
-
-  // [node:view-count], [node:view-count:last-viewed]
-  $info['tokens']['current-page'] = array(
-    'full-url' => array(
-      'name' => t('Full URL'),
-      'description' => t('Full URL including the page query string parameters.')
-    ),
-    'live-title' => array(
-      'name' => t('Live title'),
-      'description' => t('Page title reflecting changes for dynamically generated pages.')
-    ),
-    'best-image' => array(
-      'name' => t('Best image'),
-      'description' => t('Either the site logo, or an image picked from the content to represent the page.')
-    ),
+  $info['types']['current-iform-page'] = array(
+    'name' => t('Current IForm page'),
+    'description' => t('Tokens related to the current Indicia page.'),
   );
 
+ $info['tokens']['current-iform-page'] = array(
+    'full-url' => array(
+      'name' => t('Full URL'),
+      'description' => t('Full URL including the page query string parameters, excluding pagination and sort info.')
+    ),
+    'title' => array(
+      'name' => t('Title'),
+      'description' => t('Page title reflecting changes for dynamically generated pages.')
+    ),
+    'image' => array(
+      'name' => t('Image'),
+      'description' => t('Either the site logo, or an image picked from the content to represent the page.')
+    ),
+    'description' => array(
+      'name' => t('Description'),
+      'description' => t('Either the node summary, or a description set by the Indicia page.')
+    ),
+    'latitude' => array(
+      'name' => t('Latitude'),
+      'description' => t('Latitude of the data shown on an Indicia page where relevant.')
+    ),
+    'longitude' => array(
+      'name' => t('Longitude'),
+      'description' => t('Longitude of the data shown on an Indicia page where relevant.')
+    ),
+  );
   return $info;
 }
 
@@ -1533,10 +1547,11 @@ function iform_token_info() {
  */
 function iform_tokens($type, $tokens, array $data = array(), array $options = array()) {
   $replacements = array();
-  if ($type == 'current-page' || $type==='node') {
+  if ($type == 'current-iform-page') {
+    global $iform_page_metadata;
     foreach ($tokens as $name => $original) {
-      switch ("$type:$name") {
-        case 'current-page:full-url':
+      switch ($name) {
+        case 'full-url':
           $uriParts = explode('?', $_SERVER['REQUEST_URI']);
           if (count($uriParts)) {
             parse_str($uriParts[1], $query);
@@ -1550,15 +1565,58 @@ function iform_tokens($type, $tokens, array $data = array(), array $options = ar
           $uri = implode('?', $uriParts);
           $replacements[$original] = "http://$_SERVER[HTTP_HOST]$uri";
           break;
-        case 'current-page:live-title':
+        case 'title':
           $replacements[$original] = drupal_get_title();
           break;
-        case 'current-page:best-image':
-          global $iform_content_image;
-          if (isset($iform_content_image))
-            $replacements[$original] = $iform_content_image;
+        case 'image':
+          global $iform_page_metadata;
+          if (isset($iform_page_metadata) && isset($iform_page_metadata['image']))
+            $replacements[$original] = $iform_page_metadata['image'];
           else
             $replacements[$original] = theme_get_setting('logo');
+          break;
+        case 'description':
+          if (isset($iform_page_metadata) && isset($iform_page_metadata['description']))
+            $replacements[$original] = $iform_page_metadata['description'];
+          else {
+            // Copy of the code for the node:summary token as a fallback
+            if (!empty($data['node'])) {
+              $node = $data['node'];
+              if ($items = field_get_items('node', $node, 'body', LANGUAGE_NONE)) {
+                $instance = field_info_instance('node', 'body', $node->type);
+                $field_langcode = field_language('node', $node, 'body', LANGUAGE_NONE);
+                // If the summary was requested and is not empty, use it.
+                if ($name == 'summary' && !empty($items[0]['summary'])) {
+                  $output = _text_sanitize($instance, $field_langcode, $items[0], 'summary');
+                }
+                // Attempt to provide a suitable version of the 'body' field.
+                else {
+                  $output = _text_sanitize($instance, $field_langcode, $items[0], 'value');
+                  // A summary was requested.
+                  if ($name == 'summary') {
+                    if (isset($instance['display']['teaser']['settings']['trim_length'])) {
+                      $trim_length = $instance['display']['teaser']['settings']['trim_length'];
+                    }
+                    else {
+                      // Use default value.
+                      $trim_length = NULL;
+                    }
+                    // Generate an optionally trimmed summary of the body field.
+                    $output = text_summary($output, $instance['settings']['text_processing'] ? $items[0]['format'] : NULL, $trim_length);
+                  }
+                }
+                $replacements[$original] = $output;
+              }
+            }
+          }
+          break;
+        case 'latitude':
+          if (!empty($iform_page_metadata['latitude']))
+            $replacements[$original] = $iform_page_metadata['latitude'];
+          break;
+        case 'longitude':
+          if (!empty($iform_page_metadata['longitude']))
+            $replacements[$original] = $iform_page_metadata['longitude'];
           break;
       }
     }
