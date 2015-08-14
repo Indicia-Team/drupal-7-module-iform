@@ -1553,7 +1553,7 @@ function iform_tokens($type, $tokens, array $data = array(), array $options = ar
       switch ($name) {
         case 'full-url':
           $uriParts = explode('?', $_SERVER['REQUEST_URI']);
-          if (count($uriParts)) {
+          if (count($uriParts)>1) {
             parse_str($uriParts[1], $query);
             // we need to remove sort and paging parameters as they cause search engines to excessively spider
             foreach ($query as $key=>$value) {
