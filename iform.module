@@ -1563,7 +1563,8 @@ function iform_tokens($type, $tokens, array $data = array(), array $options = ar
             $uriParts[1] = data_entry_helper::array_to_query_string($query);
           }
           $uri = implode('?', $uriParts);
-          $replacements[$original] = "http://$_SERVER[HTTP_HOST]$uri";
+          $scheme = empty($_SERVER['https']) || $_SERVER['https']==='off' ? 'http' : 'https';
+          $replacements[$original] = "$scheme://$_SERVER[HTTP_HOST]$uri";
           break;
         case 'title':
           $replacements[$original] = drupal_get_title();
