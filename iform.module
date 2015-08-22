@@ -1424,7 +1424,13 @@ function hostsite_get_url($path, $params=false) {
   return url($path, $opts);
 }
 
-
+/**
+ * Retrieve the name of the host website.
+ * @return string The website's name.
+ */
+function hostsite_get_name() {
+  return variable_get('site_name', '');
+}
 
 /**
  * Returns a list of website IDs that this website is allowed use data for. This is defined by the agreement between the 
