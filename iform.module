@@ -1425,11 +1425,12 @@ function hostsite_get_url($path, $params=false) {
 }
 
 /**
- * Retrieve the name of the host website.
- * @return string The website's name.
+ * Retrieve a site configuration value, e.g. site name or site mail.
+ * @param string $name Name of the config value to retrieve, e.g. name or mail.
+ * @return string The config value.
  */
-function hostsite_get_name() {
-  return variable_get('site_name', '');
+function hostsite_get_site_config($name) {
+  return variable_get("site_$name", '');
 }
 
 /**
