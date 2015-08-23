@@ -1425,12 +1425,25 @@ function hostsite_get_url($path, $params=false) {
 }
 
 /**
- * Retrieve a site configuration value, e.g. site name or site mail.
+ * @todo Finish
+ * @param string $context Context of the variable, either site or iform.
  * @param string $name Name of the config value to retrieve, e.g. name or mail.
- * @return string The config value.
+ * @param mixed $default The default value to return
+ * @return mixed The config value.
  */
-function hostsite_get_site_config($name) {
-  return variable_get("site_$name", '');
+function hostsite_get_config_value($context, $name, $default=false) {
+  // some backwards compatibility to cope with variables inconsistenly named iform_* or indicia_*
+  if ($context==='iform') {
+    switch ($name) {
+      case 'spatial_systems':
+      case 'map_centroid_lat':
+      case 'map_centroid_lat':
+      case 'map_zoom':
+      case 'profile_location_type_id':
+        $context='indicia';
+    }
+  }
+  return variable_get("{$context}_{$name}", $default);
 }
 
 /**
