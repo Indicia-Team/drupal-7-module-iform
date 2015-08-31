@@ -1429,6 +1429,14 @@ function hostsite_get_url($path, $params=false) {
 }
 
 /**
+ * Retrieves the path for the current page.
+ * @return string The current page path.
+ */
+function hostsite_get_current_page_path() {
+  return drupal_get_path_alias($_GET['q']);
+}
+
+/**
  * @todo Finish
  * @param string $context Context of the variable, either site or iform.
  * @param string $name Name of the config value to retrieve, e.g. name or mail.
