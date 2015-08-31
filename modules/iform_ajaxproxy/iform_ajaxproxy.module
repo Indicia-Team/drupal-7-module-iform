@@ -58,9 +58,9 @@ function iform_ajaxproxy_menu(){
  * @see iform_proxy_redirect()
  */
 function iform_ajaxproxy_url($nid, $index) {
-  return url(IFORM_AJAXPROXY_PATH, array(),
+  return url(IFORM_AJAXPROXY_PATH,
     array('absolute' => TRUE, 'query' => array(
-      'node' => $nid ? '' : $nid, 'index' => $index
+      'node' => empty($nid) ? '' : $nid, 'index' => $index
     )));
 }
 
