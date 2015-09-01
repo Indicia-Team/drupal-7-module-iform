@@ -1400,6 +1400,49 @@ function hostsite_set_page_title($title) {
 }
 
 /**
+ * Retrieves the current node page's title
+ * @param $nid Node ID
+ * @return string
+ */
+function hostsite_get_page_title($nid) {
+  static $indicia_page_title;
+  if (isset($indicia_page_title)) {
+    return $indicia_page_title;
+  }
+  $node = node_load($nid);
+  return $node->title;
+}
+
+/**
+ * Get's a field value for the current node.
+ * @param integer $nid The Node ID
+ * @param string $field The field name
+ * @return mixed The field value
+ */
+function hostsite_get_node_field_value($nid, $field) {
+  $node = node_load($nid);
+  // @todo Test, document, copy to D6 & 7
+  if ($field === 'params') {
+    return $node->params;
+  }
+  else {
+    if ($field==='title' || $field==='iform' || $field==='available_for_groups')
+      return $node->$field;
+    if ($field !== 'body' && !preg_match('/^field_/', $field)) {
+      $field = "field_$field";
+    }
+    // @todo Do we need this test?
+    if (!isset($node->$field)) {
+      drupal_set_message("Could not find $field");
+      return FALSE;
+    }
+
+    return $node->$field[$node->language][0]['value'];
+  }
+}
+
+
+/**
  * Goto a page on the host site.
  * @param string $path The page path.
  * @param array $params The params to add to the URL.
