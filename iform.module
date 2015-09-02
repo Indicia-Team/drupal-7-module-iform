@@ -1510,6 +1510,44 @@ function hostsite_get_public_file_path() {
 }
 
 /**
+ * Returns true if there is a form on this site for editing groups. This allows group
+ * related functionality to be turned on and off as appropriate.
+ * @return boolean True if group edit pages exist on this site.
+ */
+function hostsite_has_group_functionality() {
+  $query = db_query("SELECT count(*) as count FROM {iform} WHERE iform='group_edit'");
+  $row = $query->fetchObject();
+  return $row->count>0;
+}
+
+/**
+ * Retrieve the available pages which can be linked to a recording group and will
+ * therefore be filtered to the content of that group.
+ * @param integer $group_id ID of the group to load available pages for
+ * @return array Array of pages titles keyed by node path.
+ */
+function hostsite_get_group_compatible_pages($group_id) {
+  $sql = "SELECT n.nid, n.title
+        FROM {iform} i
+        JOIN {node} n ON n.nid=i.nid
+        WHERE i.available_for_groups=1 AND ";
+  if (empty($group_id))
+    $sql .= 'i.limit_to_group_id IS NULL';
+  else {
+    $sql .= '(i.limit_to_group_id IS NULL OR i.limit_to_group_id = ' . $group_id . ')';
+  }
+  $sql .= ' ORDER BY n.title';
+  $qry = db_query($sql);
+  $pages=array();
+  foreach ($qry as $row) {
+    $path = drupal_get_path_alias('node/' . $row->nid);
+    $path = preg_replace('/^\/(\?q=)?/', '', $path);
+    $pages[$path] = $row->title;
+  }
+  return $pages;
+}
+
+/**
  * Returns a list of website IDs that this website is allowed use data for. This is defined by the agreement between the 
  * 2 websites and depends on the exact task being performed.
  * @param array $readAuth Read authorisation tokens
