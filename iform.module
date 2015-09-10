@@ -1338,6 +1338,16 @@ function hostsite_set_user_field($field, $data) {
 }
 
 /**
+ * Returns true if the current user is permitted to perform a named task.
+ * @param string $task
+ * @return boolean True if allowed
+ */
+function hostsite_user_has_permission($task, $uid = FALSE) {
+  $account = $uid ? user_load($uid) : NULL;
+  return user_access($task, $account);
+}
+
+/**
  * Enable a library in rhw host website.
  * @param string $library Name of the library. The following are supported:
  * 
