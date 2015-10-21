@@ -325,8 +325,10 @@ function iform_update($node) {
   $needs_review = isset($node->needs_review) ? $node->needs_review : 0;
   $available_for_groups = isset($_POST['available_for_groups']) ? $_POST['available_for_groups'] : 
       (isset($node->available_for_groups) ? $node->available_for_groups : 0);
-  $limit_to_group_id = !empty($_POST['limit_to_group_id']) ? $_POST['limit_to_group_id'] : 
+  $limit_to_group_id = isset($_POST['limit_to_group_id']) ? $_POST['limit_to_group_id'] :
       (isset($node->limit_to_group_id) ? $node->limit_to_group_id : null);
+  if ($limit_to_group_id==='')
+    $limit_to_group_id = null;
   // updating an iform, when needs_review=3, means that the features module has detected that a form in default state
   // has had its code changed so needs to be reflected in the database. In this case we actually need to merge the
   // params together so that user params are not lost.
@@ -692,6 +694,8 @@ function iform_view($node, $view_mode) {
     $connection = iform_get_connection_details($node);
     $args['website_id']=$connection['website_id'];
     $args['password']=$connection['password'];
+    $args['available_for_groups']=$node->available_for_groups;
+    $args['limit_to_group_id']=$node->limit_to_group_id;
     // we need to grab each requested parameter from the node to pass to the form
     $params = form_helper::get_form_parameters($node->iform);
 
