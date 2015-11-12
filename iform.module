@@ -1565,6 +1565,15 @@ function hostsite_get_group_compatible_pages($group_id) {
 }
 
 /**
+ * Returns true if a Drupal module is enabled.
+ * @param string $module
+ * @return boolean True if enabled
+ */
+function hostsite_module_exists($module) {
+  return module_exists($module);
+}
+
+/**
  * Returns a list of website IDs that this website is allowed use data for. This is defined by the agreement between the 
  * 2 websites and depends on the exact task being performed.
  * @param array $readAuth Read authorisation tokens
