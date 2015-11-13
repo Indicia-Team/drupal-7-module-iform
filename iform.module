@@ -230,9 +230,10 @@ function iform_form(&$node, $form_state) {
   $form['iform_forms']['picker'] = array(
     '#markup' => form_helper::prebuilt_form_picker($readAuth, array(
       'form' => $iform,
+      'base_url' => $connection['base_url'],
       'website_id' => $connection['website_id'],
       'password' => $connection['password'],
-      'needWebsiteInputs' => !$connection['using_drupal_vars'] || variable_get('indicia_allow_connection_override', FALSE),
+      'allowConnectionOverride' => variable_get('indicia_allow_connection_override', FALSE),
       'available_for_groups' => isset($node->available_for_groups) ? $node->available_for_groups : false,
       'limit_to_group_id' => isset($node->limit_to_group_id) ? $node->limit_to_group_id : null
     ))
@@ -279,6 +280,8 @@ function get_custom_param_values($node) {
     // always want the website id and password
     $values['website_id']=$_POST['website_id'];
     $values['password']=$_POST['password'];
+    if (!empty($_POST['base_url']))
+      $values['base_url']=$_POST['base_url'];
     // now get the rest of the parameters
     foreach ($params as $param) {
       if (isset($_POST[$param['fieldname']]))
@@ -370,7 +373,7 @@ function iform_delete($node) {
 }
 
 /**
-* Implemenation of hook_load
+* Implementation of hook_load
 * @param node object to load additional information for
 * @return object with iform fields
 */
@@ -618,7 +621,7 @@ function iform_features_review() {
 }
 
 /**
- * Utility method that gets the website_id and password appropriate to connect
+ * Utility method that gets the base_url, website_id and password appropriate to connect
  * a given node to the warehouse.
  * @param mixed $node A node object or nid.
  * @return array Connection details, including website_id and password. Also 
@@ -630,9 +633,11 @@ function iform_get_connection_details($node) {
   // convert a nid to a node
   if (!is_object($node))
     $node = node_load($node);
+  $r['base_url']=variable_get('indicia_base_url', '');
   $r['website_id']=variable_get('indicia_website_id', '');
   $r['password']=variable_get('indicia_password', '');
-  $r['using_drupal_vars'] = !empty($r['website_id']) && !empty($r['password']);
+  if (empty($r['base_url']) || variable_get('indicia_allow_connection_override', FALSE))
+    $r['base_url'] = isset($node->params['base_url']) ? $node->params['base_url'] : $r['base_url'];
   if (empty($r['website_id']) || variable_get('indicia_allow_connection_override', FALSE))
     $r['website_id'] = isset($node->params['website_id']) ? $node->params['website_id'] : $r['website_id'];
   if (empty($r['password']) || variable_get('indicia_allow_connection_override', FALSE))
@@ -665,7 +670,7 @@ function iform_settings() {
  */
 function iform_view($node, $view_mode) {
   drupal_page_is_cacheable(FALSE);
-  iform_load_helpers(array('data_entry_helper', 'form_helper'));
+  iform_load_helpers(array('data_entry_helper', 'form_helper'), empty($node->params['base_url']) ? '' : $node->params['base_url']);
   if (iform_check_needs_review($node)) {
     global $user;
     if (user_access('edit iform')) {
@@ -692,6 +697,7 @@ function iform_view($node, $view_mode) {
     global $indicia_theme_path;
     $indicia_theme_path = iform_media_folder_path() . 'themes/';
     $connection = iform_get_connection_details($node);
+    $args['base_url'] = $connection['base_url'];
     $args['website_id']=$connection['website_id'];
     $args['password']=$connection['password'];
     $args['available_for_groups']=$node->available_for_groups;
@@ -1136,8 +1142,9 @@ function iform_load_language_files($node) {
  * Method to load an array of helper classes. Also overrides any helper config settings
  * for those classes from drupal variable settings.
  * @param array $files List of helper class names to load.
+ * @param string $base_url Warehouse base URL. Only required if overriding the default.
  */
-function iform_load_helpers(array $files) {
+function iform_load_helpers(array $files, $base_url='') {
   $configLoaded = class_exists('helper_config');
   if (!is_array($files))
     throw new exception('Call to iform_load_helpers must pass an array of helper file names');
@@ -1152,8 +1159,8 @@ function iform_load_helpers(array $files) {
     // could load a different warehouse per page.
     if (function_exists('iform_load_warehouse_details'))
       iform_load_warehouse_details();
-    else { 
-      helper_config::$base_url = variable_get('indicia_base_url', helper_config::$base_url);
+    else {
+      helper_config::$base_url = empty($base_url) ? variable_get('indicia_base_url', helper_config::$base_url) : $base_url;
       helper_config::$geoserver_url = variable_get('indicia_geoserver_url', helper_config::$geoserver_url);
     }
     if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']!=='off') {
@@ -1188,7 +1195,7 @@ function iform_load_helpers(array $files) {
   helper_base::$images_path = base_path() . iform_media_folder_path() . 'images/';
   if (variable_get('indicia_private_warehouse', FALSE)) {
     $relative_proxy_path = iform_client_helpers_path() . 'proxy.php?url=' . helper_base::$base_url;
-    // convert to absolute by removeing the leading '.' and prepending the base URL
+    // convert to absolute by removing the leading '.' and prepending the base URL
     global $base_url;
     helper_base::$warehouse_proxy = $base_url . substr($relative_proxy_path, 1);
   }
