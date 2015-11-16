@@ -186,66 +186,82 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
   // Add any module declared additional iform variables to the settings form. Extra variables only 
   // visible after install, as they may need a website connection
   if ((!defined('MAINTENANCE_MODE') || MAINTENANCE_MODE != 'install')  && variable_get('indicia_website_id', false)) {
-    $readAuth = data_entry_helper::get_read_auth(variable_get('indicia_website_id', 0), variable_get('indicia_password', ''));
-    // Add any indicia variables declared by hook_variable_info
-    global $language;
-    $vars = module_invoke_all('variable_info', array("language" => $language));
-    $ctrls = array();
-    foreach ($vars as $var => $config) {
-      $matches = array();
-      if (isset($config['addToIndiciaSettingsPage']) && $config['addToIndiciaSettingsPage']) {
-        if (isset($config['subtype']) && preg_match('/^termlists_term:(?P<list>.+)/', $config['subtype'], $matches))
-          $type = 'select';  
-        elseif (isset($config['subtype']) && preg_match('/^(?P<table>[a-z_]+)\.(?P<caption>[a-z_]+)/', $config['subtype'], $matches))
-          $type = 'select';  
-        else
-          $type = ($config['type'] == 'radios' ? 'radios' : 'textfield');
-        $ctrls[$var] = array(
-          '#type'=>$type,
-          '#title'=>$config['title'],
-          '#description'=>$config['description'],
-          '#default_value'=>variable_get($var, isset($config['default']) ? $config['default'] : '')
-        );
-        if (isset($config['options'])) $ctrls[$var]['#options'] = $config['options'];
-        try {
-          // output buffer used to catch and discard errors as we'll handle them ourselves and don't want them on screen.
-          ob_start();
-          if (isset($matches['list']) || isset($matches['table'])) {
-            if (isset($matches['list'])) {
-              $rows = data_entry_helper::get_population_data(array(
-                'table' => 'termlists_term',
-                'extraParams' => $readAuth + array('termlist_external_key' => 'indicia:' . $matches['list'])
-              ));
-              $captionField='term';
-            }
-            else {
-              $rows = data_entry_helper::get_population_data(array(
-                'table' => $matches['table'],
-                'extraParams' => $readAuth,
-                'columns' => 'id,'.$matches['caption']
-              ));
-              $captionField=$matches['caption'];
-            }
-            $options = array('' => t('<please select>'));
-            foreach ($rows as $row) {
-              $options[$row['id']] = $row[$captionField];
-            }
-            $ctrls[$var]['#options'] = $options;
+    try {
+      $readAuth = data_entry_helper::get_read_auth(variable_get('indicia_website_id', 0), variable_get('indicia_password', ''));
+      // Add any indicia variables declared by hook_variable_info
+      global $language;
+      $vars = module_invoke_all('variable_info', array("language" => $language));
+      $ctrls = array();
+      foreach ($vars as $var => $config) {
+        $matches = array();
+        if (isset($config['addToIndiciaSettingsPage']) && $config['addToIndiciaSettingsPage']) {
+          if (isset($config['subtype']) && preg_match('/^termlists_term:(?P<list>.+)/', $config['subtype'], $matches)) {
+            $type = 'select';
           }
-          ob_end_clean();
-        } catch (Exception $e) {
-          ob_end_clean();
-          watchdog('iform', 'Error loading iform settings for '.$config['title'].': '.$e->getMessage());
-          drupal_set_message("Unable to load the control $config[title], probably because the warehouse connection is not correctly configured. ");
-          unset($ctrls[$var]);
+          elseif (isset($config['subtype']) && preg_match('/^(?P<table>[a-z_]+)\.(?P<caption>[a-z_]+)/', $config['subtype'], $matches)) {
+            $type = 'select';
+          }
+          else {
+            $type = ($config['type'] == 'radios' ? 'radios' : 'textfield');
+          }
+          $ctrls[$var] = array(
+            '#type' => $type,
+            '#title' => $config['title'],
+            '#description' => $config['description'],
+            '#default_value' => variable_get($var, isset($config['default']) ? $config['default'] : '')
+          );
+          if (isset($config['options'])) {
+            $ctrls[$var]['#options'] = $config['options'];
+          }
+          try {
+            // output buffer used to catch and discard errors as we'll handle them ourselves and don't want them on screen.
+            ob_start();
+            if (isset($matches['list']) || isset($matches['table'])) {
+              if (isset($matches['list'])) {
+                $rows = data_entry_helper::get_population_data(array(
+                  'table' => 'termlists_term',
+                  'extraParams' => $readAuth + array('termlist_external_key' => 'indicia:' . $matches['list'])
+                ));
+                $captionField = 'term';
+              }
+              else {
+                $rows = data_entry_helper::get_population_data(array(
+                  'table' => $matches['table'],
+                  'extraParams' => $readAuth,
+                  'columns' => 'id,' . $matches['caption']
+                ));
+                $captionField = $matches['caption'];
+              }
+              $options = array('' => t('<please select>'));
+              foreach ($rows as $row) {
+                if (!isset($row['id']))
+                  drupal_set_message('Dodgy: ' . var_export($row, true));
+                $options[$row['id']] = $row[$captionField];
+              }
+              $ctrls[$var]['#options'] = $options;
+            }
+            ob_end_clean();
+          } catch (Exception $e) {
+            ob_end_clean();
+            watchdog('iform', 'Error loading iform settings for ' . $config['title'] . ': ' . $e->getMessage());
+            drupal_set_message("Unable to load the control $config[title], probably because the warehouse connection is not correctly configured. ");
+            unset($ctrls[$var]);
+          }
         }
       }
-    }
-    if (!empty($ctrls)) {
-      $form['additional'] = array_merge(array(
-        '#type' => 'fieldset',
-        '#title' => t('Additional Settings')
-      ), $ctrls);
+      if (!empty($ctrls)) {
+        $form['additional'] = array_merge(array(
+          '#type' => 'fieldset',
+          '#title' => t('Additional Settings')
+        ), $ctrls);
+      }
+    } catch (Exception $e) {
+      // Handle warehouse not found
+      if ($e->getCode()===404) {
+        drupal_set_message('The current warehouse URL is incorrect so some settings are not available.', 'warning');
+      } else {
+        throw $e;
+      }
     }
   }
   $form['continue'] = array(
@@ -295,22 +311,34 @@ mapInitialisationHooks.push(function(div) {
 function indicia_configuration_form_validate($form, $form_state) {
   if ($form_state['values']['indicia_warehouse']==='' || ($form_state['values']['indicia_warehouse']=='other' && empty($form_state['values']['indicia_base_url'])))
     form_set_error('indicia_website_id', t('Please supply a warehouse URL for connection to Indicia, or select a pre-configured connection.'));
-  elseif (!empty($form_state['values']['indicia_password'])) {
-    // test the connection to the warehouse
+  else {
     $urls = indicia_get_warehouse_urls($form_state);
-    data_entry_helper::$base_url = $urls['base_url'];
-    // clear the cache if the linked warehouse changes
-    if (variable_get('indicia_base_url', '') !== $urls['base_url'])
+    if (variable_get('indicia_base_url', '') !== $urls['base_url'] || !empty($form_state['values']['indicia_password'])) {
+      // test the connection to the warehouse
+      data_entry_helper::$base_url = $urls['base_url'];
+      // clear the cache if the linked warehouse changes
       data_entry_helper::clear_cache();
-    $read_auth = data_entry_helper::get_read_auth($form_state['values']['indicia_website_id'], $form_state['values']['indicia_password']);
-    $test = data_entry_helper::get_population_data(array(
-      'table' => 'survey',
-      'extraParams' => $read_auth + array('limit' => 0),
-      'nocache' => true
-    ));
-    if (isset($test['error']))
-      form_set_error('indicia_website_id', t('The configuration for the connection to the warehouse is incorrect. This could be an incorrect ' .
-          'or unavailable Indicia Warehouse, an incorrect Indicia Website ID or Password.'));
+      try {
+        $read_auth = data_entry_helper::get_read_auth($form_state['values']['indicia_website_id'], $form_state['values']['indicia_password']);
+        $test = data_entry_helper::get_population_data(array(
+          'table' => 'survey',
+          'extraParams' => $read_auth + array('limit' => 0),
+          'nocache' => TRUE
+        ));
+        if (isset($test['error'])) {
+          form_set_error('indicia_website_id', t('The configuration for the connection to the warehouse is incorrect. This could be an incorrect ' .
+            'or unavailable Indicia Warehouse, an incorrect Indicia Website ID or Password.'));
+        }
+      } catch (Exception $e) {
+        // Handle warehouse not found
+        if ($e->getCode() === 404) {
+          form_set_error('indicia_base_url', 'The warehouse URL is incorrect or points to a warehouse that is not currently reachable.');
+        }
+        else {
+          throw $e;
+        }
+      }
+    }
   }
   $systems = _indicia_sref_systems_from_form($form_state['values']);
   if (empty($systems)) {
