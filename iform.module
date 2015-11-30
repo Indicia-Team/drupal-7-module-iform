@@ -1450,13 +1450,13 @@ function hostsite_get_node_field_value($nid, $field) {
     return $node->params;
   }
   else {
-    if ($field==='title' || $field==='iform' || $field==='available_for_groups')
+    if ($field==='title' || $field==='iform' || $field==='available_for_groups' || $field==='limit_to_group_id')
       return $node->$field;
     if ($field !== 'body' && !preg_match('/^field_/', $field)) {
       $field = "field_$field";
     }
     // @todo Do we need this test?
-    if (!isset($node->$field)) {
+    if (!property_exists($node, $field)) {
       drupal_set_message("Could not find $field");
       return FALSE;
     }
