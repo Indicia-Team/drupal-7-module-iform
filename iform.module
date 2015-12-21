@@ -482,12 +482,12 @@ function iform_form_user_login_alter(&$form, &$form_state) {
       'extraParams' => $auth + array(
           'view' => 'detail',
           'id' => $_GET['group_id'],
-          'joining_method' => 'P',  // only public groups can be joined this way
           'website_id' => variable_get('indicia_website_id')
         ),
       'caching' => false
     ));
-    if (count($groups)===1) {
+    // if the group exists and is not invite only then the user has followed a log in request on attempt to sign up.
+    if (count($groups)===1 && $groups[0]['joining_method']!=='I') {
       module_load_include('inc', 'iform', 'iform.groups');
       $group = $groups[0];
       $link = url("join/$group[url_safe_title]", array('absolute' => TRUE));
@@ -732,7 +732,7 @@ function iform_view($node, $view_mode) {
         $s = call_user_func(array('iform_' . $node->iform, 'get_submission'), $_POST, $args, $node->nid);
       } catch (Exception $e) {
         watchdog('iform', 'Exception occurred during build of form submission: ' . $e->getMessage());
-        drupal_set_message(t('An error occurred whilst saving the new site details.'));
+        drupal_set_message(t('An error occurred whilst building the form submission.'));
         unset($s);
       }
       // And allow the form to dynamically set the destination after post

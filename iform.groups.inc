@@ -66,9 +66,16 @@ function iform_join_group($title='') {
     else {
       // User is already a member.
       if ($groupsUsers[0]['pending'] === 't') {
-        // Membership exists but is pending. As this is now a public group we can overwrite to
-        // remove the pending flag.
-        if (!iform_join_public_group($group, $auth['write_tokens'], $indiciaUserId, $groupsUsers[0]['id'])) {
+        if ($group['joining_method'] === 'P') {
+          // Membership exists but is pending. As this is now a public group we can overwrite to
+          // remove the pending flag.
+          if (!iform_join_public_group($group, $auth['write_tokens'], $indiciaUserId, $groupsUsers[0]['id'])) {
+            drupal_goto('<front>');
+            return;
+          }
+        } else {
+          // Already pending for a request only group
+          drupal_set_message(t('Your application to join @group is still waiting for a group administrator to approve it.', array('@group' => iform_readable_group_title($group))));
           drupal_goto('<front>');
           return;
         }
@@ -78,7 +85,14 @@ function iform_join_group($title='') {
         $showJoinMessage=false;
       }
     }
-    return iform_show_group_join_success($group, $auth, $showJoinMessage);
+    if ($group['joining_method'] === 'P')
+      return iform_show_group_join_success($group, $auth, $showJoinMessage);
+    else {
+      drupal_set_message(t('Your request to join @group has been recorded and will be checked by one of the group administrators shortly.',
+          array('@group' => iform_readable_group_title($group))));
+      drupal_goto('<front>');
+      return;
+    }
   }
   else {
     // User is not logged in, so redirect to login page with parameters so we know which group
@@ -166,7 +180,8 @@ function iform_join_public_group($group, $writeAuth, $indiciaUserId, $groupsUser
     'groups_user:group_id' => $group['id'],
     'groups_user:user_id' => $indiciaUserId,
     'groups_user:username' => $user->name,
-    'groups_user:pending' => 'f'
+    // pending if group is by request
+    'groups_user:pending' => $group['joining_method'] === 'P' ? 'f' : 't'
   );
   if ($groupsUserId) {
     // existing record to update?
