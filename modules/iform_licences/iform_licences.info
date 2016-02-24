@@ -1,0 +1,6 @@
+; $Id$
+name = Indicia Licences
+description = A module that allows user selection of a licence to apply to their records.
+core = 7.x
+package = "Indicia"
+dependencies[] = iform

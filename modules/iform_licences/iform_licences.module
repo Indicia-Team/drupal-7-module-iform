@@ -1,0 +1,68 @@
+<?php
+
+function iform_licences_form_alter(&$form, &$form_state, $form_id) {
+  if (($form_id === 'user_profile_form' || $form_id === 'user_register_form')) {
+    $conn = iform_get_connection_details(null);
+    $readAuth = data_entry_helper::get_read_auth($conn['website_id'], $conn['password']);
+    $licences = data_entry_helper::get_population_data(array(
+      'table' => 'licence',
+      'extraParams' => $readAuth
+    ));
+    if (count($licences)) {
+      $current = data_entry_helper::get_population_data(array(
+        'table' => 'users_website',
+        'extraParams' => $readAuth + array(
+            'user_id' => hostsite_get_user_field('indicia_user_id'),
+            'columns' => 'licence_id'
+          ),
+        'caching' => FALSE
+      ));
+      $options = array();
+      foreach ($licences as $licence) {
+        $options[$licence['id']] = "$licence[code]: $licence[title]";
+      }
+      $description = t('Select the licence to apply to your records.') . ' ';
+      if ($current[0]['licence_id']) {
+        $description .= t('If you change the selected licence then it will only affect records you enter from now on.');
+      }
+      else {
+        $description .= strtoupper(t('This licence will also be applied to all your previously entered records on @site.',
+          array('@site' => variable_get('site_name','this system'))));
+      }
+      $form['field_iform_licence'] = array(
+        '#type' => 'radios',
+        '#title' => t('Licence for your records'),
+        '#options' => $options,
+        '#description' => $description,
+        '#required' => TRUE,
+        '#default_value' => $current[0]['licence_id']
+      );
+      $form['#submit'][] = 'iform_licences_form_submit';
+    }
+  }
+}
+
+function iform_licences_form_submit($form, &$form_state) {
+  $conn = iform_get_connection_details(NULL);
+  $auth = data_entry_helper::get_read_write_auth($conn['website_id'], $conn['password']);
+  $current = data_entry_helper::get_population_data(array(
+    'table' => 'users_website',
+    'extraParams' => $auth['read'] + array(
+        'user_id' => hostsite_get_user_field('indicia_user_id'),
+        'columns' => 'id'
+      ),
+    'caching' => FALSE
+  ));
+  //drupal_set_message('Not sure that would work during registration');
+  $s = data_entry_helper::build_submission(array(
+    //'website_id' => variable_get('indicia_website_id', ''),
+    'id' => $current[0]['id'],
+    'licence_id' => $form_state['values']['field_iform_licence'],
+  ), array('model' => 'users_website'));
+
+  $r = data_entry_helper::forward_post_to('users_website', $s, $auth['write_tokens']);
+  if (!isset($r['success'])) {
+    watchdog('iform', 'Error occurred when saving a user licence: '.var_export($r, true));
+    drupal_set_message(var_export($r, true), 'error');
+  }
+}
