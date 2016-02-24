@@ -1320,8 +1320,8 @@ function hostsite_get_user_field($field, $default=false, $array=false, $uid=fals
  * Function that allows Indicia code to hook into the Drupal user profile to set a field value, without
  * introducing a Drupal code dependency.
  * @global type $user
- * @param type $field The name of a profile field.
- * @param type $data The data to be saved into the field.
+ * @param string $field The name of a profile field.
+ * @param mixed $data The data to be saved into the field.
  * @return boolean Returns false if the uid or field is not available so data cannot be written
  */
 function hostsite_set_user_field($field, $data) {
