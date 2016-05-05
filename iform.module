@@ -1274,39 +1274,45 @@ function iform_client_helpers_path() {
 }
 
 /**
- * Function that allows Indicia code to hook into the Drupal user fields to find out a field value, without
- * introducing a Drupal code dependency.
+ * Function that allows Indicia code to hook into the Drupal user fields to find
+ * out a field value, without introducing a Drupal code dependency.
  * @global type $user
- * @param string $field Name of a user field to return. This can be 'language' which returns a user's 2 character language code, 
- * 'id' to return the user's ID, 'name' to return the username, or a profile field, e.g. indicia_user_id as introduced by the Easy Login feature. This will be converted
- * to the profile field name if not prefixed with 'profile_'.
+ * @param string $field Name of a user field to return. This can be 
+ *   'language' which returns a user's 2 character language code, 
+ *   'id' to return the user's ID, 
+ *   'name' to return their username, 
+ *   'mail' tp return or their email
+ *   a user field, e.g. indicia_user_id as introduced by the Easy Login feature.
+ *   This will be converted to the  field name if not prefixed with 'field_'.
  * @param mixed $default Default value to return if not set.
  * @param boolean $array Set to true if this field allows multiple values so you need an array
  * @param type $uid User ID of user to load data for. Defaults to current user.
  * @return mixed 
  */
-function hostsite_get_user_field($field, $default=false, $array=false, $uid=false) {
+function hostsite_get_user_field($field, $default = false, $array = false, $uid = false) {
   global $user;
-  if ($field==='uid') 
-    return $uid===false ? $user->uid : $uid;
-  $account = $uid!==false ? user_load($uid) : $user;
+  if ($field === 'uid') 
+    return $uid === false ? $user->uid : $uid;
+  $account = $uid !== false ? user_load($uid) : $user;
   // Only load the account's language if inspecting another user, else use the UI language. 
-  if ($field==='language' && isset($account->language) && $uid && $user->uid!==$uid)
+  if ($field === 'language' && isset($account->language) && $uid && $user->uid !== $uid)
     return $account->language;
-  else if ($field==='language') {
+  else if ($field === 'language') {
     global $language;
     return $language->language;
   }
-  elseif ($field==='id' && isset($account->uid))
+  elseif ($field === 'id' && isset($account->uid))
     return $account->uid;
-  elseif ($field==='name' && isset($account->name))
+  elseif ($field === 'name' && isset($account->name))
     return $account->name;
-  $fieldname = (substr($field, 0, 6)==='field_' ? '' : 'field_') . $field;
+  elseif ($field === 'mail' && isset($account->mail))
+    return $account->mail;
+  $fieldname = (substr($field, 0, 6) === 'field_' ? '' : 'field_') . $field;
   $fielddef = field_info_field($fieldname);
   $user_wrapper = entity_metadata_wrapper('user', $account);
   if (isset($user_wrapper->$fieldname)) {
     $value = $user_wrapper->$fieldname->value();
-    if ($fielddef['cardinality']==='1' || $fielddef['cardinality']===1)
+    if ($fielddef['cardinality'] === '1' || $fielddef['cardinality'] === 1)
       // a single value
       return $value;
     else
