@@ -34,12 +34,12 @@ function iform_join_group($title='') {
     drupal_not_found();
     return;
   }
-  global $user;
   if (!count($groups) > 1) {
     drupal_set_message(t('The group you are trying to join has a duplicate name with another group so cannot be joined in this way.'));
     drupal_goto('<front>');
   }
   $group = $groups[0];
+  global $user;
   if ($user->uid) {
     // User is logged in
     $indiciaUserId = hostsite_get_user_field('indicia_user_id');
@@ -47,7 +47,7 @@ function iform_join_group($title='') {
       drupal_set_message(t("Before joining $group[title], please set your surname on your user account profile."));
       drupal_goto('<front>');
     }
-    $showJoinMessage=true;
+    $alreadyAMember=false;
     $groupsUsers = data_entry_helper::get_population_data(array(
       'table' => 'groups_user',
       'extraParams' => $auth['read'] + array(
@@ -82,11 +82,11 @@ function iform_join_group($title='') {
       }
       else {
         drupal_set_message(t("Welcome back to the @group.", array('@group' => iform_readable_group_title($group))));
-        $showJoinMessage=false;
+        $alreadyAMember=true;
       }
     }
-    if ($group['joining_method'] === 'P')
-      return iform_show_group_join_success($group, $auth, $showJoinMessage);
+    if ($group['joining_method'] === 'P' || $alreadyAMember)
+      return iform_show_group_join_success($group, $auth, $alreadyAMember);
     else {
       drupal_set_message(t('Your request to join @group has been recorded and will be checked by one of the group administrators shortly.',
           array('@group' => iform_readable_group_title($group))));
@@ -104,12 +104,12 @@ function iform_join_group($title='') {
  * Having successfully joined a group, show the success and a list of ongoing options.
  * @param $group
  * @param $auth
- * @param bool $showJoinMessage
+ * @param bool $alreadyAMember
  * @param string $group_home_path
  * @param string $groups_list_path
  * @return string
  */
-function iform_show_group_join_success($group, $auth, $showJoinMessage=true, $group_home_path='', $groups_list_path='') {
+function iform_show_group_join_success($group, $auth, $alreadyAMember=false, $group_home_path='', $groups_list_path='') {
   $pageData = data_entry_helper::get_population_data(array(
     'table'=>'group_page',
     'extraParams' => $auth['read'] + array(
@@ -121,7 +121,7 @@ function iform_show_group_join_success($group, $auth, $showJoinMessage=true, $gr
   $welcome = t("Welcome to the @group!", array('@group' => iform_readable_group_title($group)));
   if (count($pageData)===1) {
     // Only one page so go straight to it
-    if ($showJoinMessage)
+    if (!$alreadyAMember)
       hostsite_show_message($welcome);
     drupal_goto($pageData[0]['path']);
   } else {
@@ -129,7 +129,7 @@ function iform_show_group_join_success($group, $auth, $showJoinMessage=true, $gr
     $intro = '';
     $r = '';
 
-    if ($showJoinMessage) {
+    if (!$alreadyAMember) {
       hostsite_set_page_title($welcome);
       $intro = t("You've successfully joined the @group on @site.",
         array('@group' => iform_readable_group_title($group), '@site' => variable_get('site_name'))) . ' ';
@@ -141,8 +141,13 @@ function iform_show_group_join_success($group, $auth, $showJoinMessage=true, $gr
     $r .= '<ul>';
     if (!empty($group_home_path))
       $r .= '<li><a href="'.hostsite_get_url($group_home_path, array('group_id'=>$group['id'], 'implicit'=>$group['implicit_record_inclusion'])).'">'.lang::get("Visit the $group[title] home page").'<a></li>';
-    foreach ($pageData as $page)
-      $r .= '<li><a href="'.hostsite_get_url($page['path'], array('group_id'=>$group['id'], 'implicit'=>$group['implicit_record_inclusion'])).'">'.lang::get($page['caption']).'<a></li>';
+    foreach ($pageData as $page) {
+      $class = preg_replace('/[^a-zA-Z0-9]/', '-', strtolower($page['path']));
+      $r .= '<li class="' . $class . '"><a href="' . hostsite_get_url($page['path'], array(
+          'group_id' => $group['id'],
+          'implicit' => $group['implicit_record_inclusion']
+        )) . '">' . lang::get($page['caption']) . '<a></li>';
+    }
     if (!empty($groups_list_path))
       $r .= '<li><a href="'.hostsite_get_url($groups_list_path).'">'.lang::get("Return to your recording groups list").'<a></li>';
     $r .= '</ul></div>';
