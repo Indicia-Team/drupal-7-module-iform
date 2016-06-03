@@ -136,17 +136,17 @@ function iform_show_group_join_success($group, $auth, $alreadyAMember=false, $gr
     }
     $path = data_entry_helper::get_uploaded_image_folder();
     $r .= empty($group['logo_path']) ? '' : "<img style=\"width: 30%; float: left; padding: 0 5% 5%;\" alt=\"Logo\" src=\"$path$group[logo_path]\"/>";
-    $r .= '<div style="float: left; width: 60%;"><p>' . $intro . t('You can access the following pages for the @group',
+    $r .= '<div style="float: left; width: 60%;"><div class="group-description">' . $group['description'] . '</div><p>' . $intro . t('You can access the following pages for the @group',
         array('@group' => iform_readable_group_title($group))) . ':</p>';
     $r .= '<ul>';
     if (!empty($group_home_path))
       $r .= '<li><a href="'.hostsite_get_url($group_home_path, array('group_id'=>$group['id'], 'implicit'=>$group['implicit_record_inclusion'])).'">'.lang::get("Visit the $group[title] home page").'<a></li>';
     foreach ($pageData as $page) {
       $class = preg_replace('/[^a-zA-Z0-9]/', '-', strtolower($page['path']));
-      $r .= '<li class="' . $class . '"><a href="' . hostsite_get_url($page['path'], array(
+      $r .= '<li class="' . $class . '"><a class="button" href="' . hostsite_get_url($page['path'], array(
           'group_id' => $group['id'],
           'implicit' => $group['implicit_record_inclusion']
-        )) . '">' . lang::get($page['caption']) . '<a></li>';
+        )) . '">' . lang::get($page['caption']) . '</a></li>';
     }
     if (!empty($groups_list_path))
       $r .= '<li><a href="'.hostsite_get_url($groups_list_path).'">'.lang::get("Return to your recording groups list").'<a></li>';
