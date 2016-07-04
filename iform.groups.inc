@@ -17,7 +17,6 @@
  * @return string
  */
 function iform_join_group() {
-  watchdog('groups', 'in iform_join_group');
   iform_load_helpers(array('data_entry_helper', 'report_helper'));
   $args = func_get_args();
 
@@ -40,7 +39,6 @@ function iform_join_group() {
     'readAuth' => $auth['read'],
     'extraParams' => $params
   ));
-  watchdog('groups', 'Groups' . var_export($groups, true));
   if (isset($groups['error'])) {
     drupal_set_message('An error occurred when trying to access the group');
     watchdog('groups', 'Groups page load error: ' . var_export($groups, true));
