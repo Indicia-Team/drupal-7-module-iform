@@ -65,6 +65,7 @@ function iform_join_group() {
   }
   global $user;
   if ($user->uid) {
+    $r = '';
     // User is logged in
     if (!$indiciaUserId) {
       drupal_set_message(t("Before joining $group[title], please set your surname on your user account profile."));
@@ -75,16 +76,33 @@ function iform_join_group() {
       // Membership exists but is pending.
       drupal_set_message(t('Your application to join @group is still waiting for a group administrator to approve it.', array('@group' => iform_readable_group_title($group))));
     }
+    elseif (!isset($_GET['confirmed'])) {
+      $r .= _iform_group_confirm_form($group);
+    }
     elseif (!iform_join_public_group($group, $auth['write_tokens'], $indiciaUserId)) {
       hostsite_goto_page('<front>');
       return;
     }
-    return iform_show_group_page($group, $auth['read']);
+    $r .= iform_show_group_page($group, $auth['read']);
+    return $r;
   }
   else {
     // User is not logged in, so redirect to login page with parameters so we know which group
-    hostsite_goto_page('user', array('query' => array('group_id'=>$group['id'], 'destination' => $_GET['q'])));
+    hostsite_goto_page('user', array('group_id'=>$group['id'], 'destination' => $_GET['q']));
   }
+}
+
+function _iform_group_confirm_form($group) {
+  $reload = data_entry_helper::get_reload_link_parts();
+  $reloadpath = $reload['path'];
+  $r = '<p>' . lang::get('Would you like to join {1}?', $group['title']) . '</p>';
+  $r .= "<form method=\"GET\" action=\"$reloadpath\">";
+  foreach ($reload['params'] as $key=>$value)
+    $r .= "<input type=\"hidden\" name=\"$key\" value=\"$value\" />";
+  $r .= '<input type="hidden" name="confirmed" value="t" />';
+  $r .= '<input type="submit" value="Join" />';
+  $r .= '</form>';
+  return $r;
 }
 
 /**
@@ -121,18 +139,21 @@ function iform_show_group_page($group, $readAuth, $group_home_path='', $groups_l
   ));
   if (count($pages)) {
     $pageList = array();
-    foreach ($pages as $page)
-      $pageList[] = "<li><a class=\"button\" href=\"" .
+    foreach ($pages as $page) {
+      $class = strtolower(preg_replace('[^a-zA-Z0-9]', '-', $page['path']));
+      $pageList[] = "<li><a class=\"button $class\" href=\"" .
         hostsite_get_url($page['path'], array(
           'group_id' => $group['id'],
           'implicit' => $group['implicit_record_inclusion']
         )) .
         "\">$page[caption]</a></li>";
+    }
     $pageHtml = '<ul>' . implode('', $pageList) . '</ul>';
     $r .= "<fieldset><legend>Pages</legend><p>" .
         t("The following links are available for$nonMembers the @group:",
           array('@group' => iform_readable_group_title($group))) . "</p>$pageHtml</fieldset>";
   }
+  $r .= '</div></div>';
   return $r;
 }
 
@@ -233,7 +254,7 @@ function iform_join_public_group(&$group, $writeAuth, $indiciaUserId) {
   $s = submission_builder::build_submission($values, array('model'=>'groups_user'));
   $r = data_entry_helper::forward_post_to('save', $s, $writeAuth);
   if (isset($r['success'])) {
-    $msg = $group['joining_method'] === 'R'
+    $msg = $group['joining_method_raw'] === 'R'
       ? 'Your request to join @group has been logged and is waiting for approval.'
       : 'Welcome, you are now a member of @group!';
     drupal_set_message(t($msg, array('@group' => iform_readable_group_title($group))));

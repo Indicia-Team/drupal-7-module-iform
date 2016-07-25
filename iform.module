@@ -470,15 +470,20 @@ function iform_form_user_login_alter(&$form, &$form_state) {
       module_load_include('inc', 'iform', 'iform.groups');
       $group = $groups[0];
       $link = url("join/$group[url_safe_title]", array('absolute' => TRUE));
-      $intro = t('You\'ve followed a link to join the @group. To access all facilities available for this group you need you to log in to @site.',
+      $intro = '';
+      if (isset($_GET['q']) && substr($_GET['q'], 0, 5)==='join/')
+        $intro = t('You\'ve followed a link to join the @group.');
+      $intro .= t('To access all facilities available for this group you need you to log in to @site.',
         array('@group' => iform_readable_group_title($group), '@site' => variable_get('site_name')));
-      $form['intro'] = array(
-        '#markup' => iform_show_group_page($group, $auth) . "<p>$intro</p>" .
-          '<ul>' .
+      $followup = '';
+      if (isset($_GET['q']) && substr($_GET['q'], 0, 5)==='join/')
+        $followup = '<ul>' .
           '<li>' . t('If you already have an account on @site, then log in using the form below.', array('@site' => variable_get('site_name'))) . '</li>' .
           '<li>' . t('If this is your first time using @site, then click the Create new account link and follow the steps to register. Once you have ' .
             'confirmed your account please visit the join link you just used (<a href="@link">@link</a>) to join the @group.',
-            array('@group' => iform_readable_group_title($group), '@site' => variable_get('site_name'), '@link' => $link)) .'</li></ul></div></div>',
+            array('@group' => iform_readable_group_title($group), '@site' => variable_get('site_name'), '@link' => $link)) .'</li></ul>';
+      $form['intro'] = array(
+        '#markup' => iform_show_group_page($group, $auth) . "<p>$intro</p>" . $followup,
         '#weight' => -50
       );
     }
