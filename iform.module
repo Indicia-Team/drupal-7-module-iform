@@ -192,7 +192,7 @@ function iform_form(&$node, $form_state) {
   }
   node_types_rebuild();
   $type = node_type_get_types('type', $node);
-  
+
   // We need to define form elements for the node's title and body.
   $form['title'] = array(
     '#type' => 'textfield',
@@ -201,23 +201,9 @@ function iform_form(&$node, $form_state) {
     '#default_value' => $node->title,
     '#weight' => 0
   );
-  // We want the body and filter elements to be adjacent. We could try doing
-  // this by setting their weights, but another module might add elements to the
-  // form with the same weights and end up between ours. By putting them into a
-  // sub-array together, we're able force them to be rendered together.
-  $defaultValue = isset($node->body[$node->language][0]['value']) ? $node->body[$node->language][0]['value'] : NULL;
-  $format = isset($node->format) ? $node->format : NULL;
+  // In Drupal 7 the Body is a Field, and is added to the form automatically.
+  // Its position is defined in the Field-ui.
   $iform = isset($node->iform) ? $node->iform : NULL;
-  $form['body'] = array(
-    '#type' => 'text_format',
-    '#format' => $format,
-    '#title' => t('Body'),
-    '#default_value' =>  $defaultValue,
-    '#rows' => 10,
-    '#required' => FALSE
-  );
-  
-
   // Define the new form fields
   $form['iform_forms'] = array(
     '#type' => 'fieldset',
@@ -354,14 +340,7 @@ function iform_update($node) {
       ->execute();
 }
 
-function iform_node_submit($node, $form, $form_state)
-{
-  if($node->type == 'iform') {
-    // make sure that the body field values are copied over to the node
-    $node->body[$node->language][0]["value"] = $form["body"]["value"]["#value"];
-    $node->body[$node->language][0]["format"] = $form["body"]["format"]["format"]["#value"];
-  }
-}
+// With the move of Body into a proper Drupal field, function iform_node_submit is no longer required.
 
 /**
 * Implementation of hook_delete, which deletes iform-specific information
@@ -491,16 +470,20 @@ function iform_form_user_login_alter(&$form, &$form_state) {
       module_load_include('inc', 'iform', 'iform.groups');
       $group = $groups[0];
       $link = url("join/$group[url_safe_title]", array('absolute' => TRUE));
-      $path = data_entry_helper::get_uploaded_image_folder();
-      $img = empty($group['logo_path']) ? '' : "<img style=\"width: 20%; float: left; padding-right: 5%\" alt=\"Logo\" src=\"$path$group[logo_path]\"/>";
-      $form['intro'] = array(
-        '#markup' => "<fieldset><legend>$group[title]</legend>$img<div style=\"float: left; width: 70%\"><p>" .
-          t('You\'ve followed a link to join the @group. This needs you to log in to @site.',
-            array('@group' => iform_readable_group_title($group), '@site' => variable_get('site_name'))) . '</p><ul>' .
+      $intro = '';
+      if (isset($_GET['q']) && substr($_GET['q'], 0, 5)==='join/')
+        $intro = t('You\'ve followed a link to join the @group.');
+      $intro .= t('To access all facilities available for this group you need you to log in to @site.',
+        array('@group' => iform_readable_group_title($group), '@site' => variable_get('site_name')));
+      $followup = '';
+      if (isset($_GET['q']) && substr($_GET['q'], 0, 5)==='join/')
+        $followup = '<ul>' .
           '<li>' . t('If you already have an account on @site, then log in using the form below.', array('@site' => variable_get('site_name'))) . '</li>' .
           '<li>' . t('If this is your first time using @site, then click the Create new account link and follow the steps to register. Once you have ' .
             'confirmed your account please visit the join link you just used (<a href="@link">@link</a>) to join the @group.',
-            array('@group' => iform_readable_group_title($group), '@site' => variable_get('site_name'), '@link' => $link)) .'</li></ul></div></fieldset>',
+            array('@group' => iform_readable_group_title($group), '@site' => variable_get('site_name'), '@link' => $link)) .'</li></ul>';
+      $form['intro'] = array(
+        '#markup' => iform_show_group_page($group, $auth) . "<p>$intro</p>" . $followup,
         '#weight' => -50
       );
     }
