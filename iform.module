@@ -911,6 +911,9 @@ function iform_check_needs_review($node) {
  * Adds any JavaScript and CSS identified by the Indicia code to the Drupal page.
  */
 function handle_resources() {
+  global $indicia_delay_handle_resources;
+  if (isset($indicia_delay_handle_resources) && $indicia_delay_handle_resources)
+    return;
   require_once iform_client_helpers_path() . 'data_entry_helper.php';
   // always add the standard functions library
   $j = data_entry_helper::$js_path . 'indicia.functions.js';
