@@ -102,19 +102,32 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
   $form['api_keys']['indicia_google_api_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Google API Key'),
-    '#description' => t('The Google API provides the Places API text search, another option to lookup place names when you use the place search control. ' .
-        'It references a global database of places and returns the list of possibilities with their spatial references ' .
-        'to Indicia. To obtain your own API key for the Google API, please visit <a target="_blank" href="https://code.google.com/apis/console">' .
-        'the Google APIs Console</a>. '),
+    '#description' => t('The Google API provides the Places API text search, another option to lookup place names ' .
+        'when you use the place search control. It references a global database of places and returns the list of ' .
+        'possibilities with their spatial references to Indicia. To obtain your own API key for the Google API, ' .
+        'please visit <a target="_blank" href="https://code.google.com/apis/console"> the Google APIs Console</a>.'),
     '#required' => FALSE,
-    '#default_value' => variable_get('indicia_google_api_key', isset(helper_config::$google_api_key) ? helper_config::$google_api_key : ''),
+    '#default_value' => variable_get('indicia_google_api_key',
+        isset(helper_config::$google_api_key) ? helper_config::$google_api_key : ''),
+  );
+  $form['api_keys']['indicia_google_maps_api_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Google Maps API Key'),
+    '#description' => t('The Google Maps API key is required to allow use of Google Maps layers but can be left ' .
+        'blank if you do not intend to use Google maps. To obtain your own API key for the Google Maps API, please ' .
+        'visit <a target="_blank" href="https://developers.google.com/maps/documentation/javascript/get-api-key#key"> ' .
+        'the Google APIs documentation.</a>.'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('indicia_google_maps_api_key',
+        isset(helper_config::$google_maps_api_key) ? helper_config::$google_maps_api_key : ''),
   );
   $form['api_keys']['indicia_bing_api_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Bing API Key'),
-    '#description' => t('The Bing API key is required to allow use of Bing map layers but can be left blank if you do not intend ' .
-        'to use Bing maps. To obtain your own key, please visit the <a target="_blank" href="http://www.bingmapsportal.com/">Bing Maps Account Center</a>. ' .
-        'Please ensure that you read and adhere to the <a href="http://www.microsoft.com/maps/product/terms.html">terms of use</a>.'),
+    '#description' => t('The Bing API key is required to allow use of Bing map layers but can be left blank if you ' .
+        'do not intend to use Bing maps. To obtain your own key, please visit the ' .
+        '<a target="_blank" href="http://www.bingmapsportal.com/">Bing Maps Account Center</a>. Please ensure that ' .
+        'you read and adhere to the <a href="http://www.microsoft.com/maps/product/terms.html">terms of use</a>.'),
     '#required' => FALSE,
     '#default_value' => variable_get('indicia_bing_api_key', ''),
   );
@@ -400,6 +413,7 @@ function indicia_configuration_form_submit($form, &$form_state) {
     variable_set('indicia_password', $form_state['values']['indicia_password']);
   variable_set('indicia_geoplanet_api_key', $form_state['values']['indicia_geoplanet_api_key']);
   variable_set('indicia_google_api_key', $form_state['values']['indicia_google_api_key']);
+  variable_set('indicia_google_maps_api_key', $form_state['values']['indicia_google_maps_api_key']);
   variable_set('indicia_bing_api_key', $form_state['values']['indicia_bing_api_key']);
   variable_set('indicia_map_centroid_lat', $form_state['values']['indicia_map_centroid_lat']);
   variable_set('indicia_map_centroid_long', $form_state['values']['indicia_map_centroid_long']);
