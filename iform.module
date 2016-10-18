@@ -1170,7 +1170,11 @@ function iform_load_helpers(array $files, $base_url='') {
     // indicia_upload_path
     // max_upload_size
     helper_config::$geoplanet_api_key = variable_get('indicia_geoplanet_api_key', helper_config::$geoplanet_api_key);
-    helper_base::$google_api_key = variable_get('indicia_google_api_key', isset(helper_config::$google_api_key) ? helper_config::$google_api_key : '');
+    helper_base::$google_api_key = variable_get('indicia_google_api_key',
+        isset(helper_config::$google_api_key) ? helper_config::$google_api_key : '');
+    helper_base::$google_maps_api_key = variable_get('indicia_google_maps_api_key',
+        isset(helper_config::$google_maps_api_key) ? helper_config::$google_maps_api_key : '');
+
     // bing api key may be ommitted for backwards compatibility reasons
     if (isset(helper_config::$bing_api_key))
       helper_config::$bing_api_key = variable_get('indicia_bing_api_key', helper_config::$bing_api_key);
