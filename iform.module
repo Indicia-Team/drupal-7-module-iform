@@ -1581,6 +1581,15 @@ function hostsite_module_exists($module) {
 }
 
 /**
+ * Encodes a string for use in a mime header.
+ * @param $string
+ * @return string
+ */
+function hostsite_mime_header_encode($string) {
+  return mime_header_encode($string);
+}
+
+/**
  * Returns a list of website IDs that this website is allowed use data for. This is defined by the agreement between the 
  * 2 websites and depends on the exact task being performed.
  * @param array $readAuth Read authorisation tokens
