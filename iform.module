@@ -769,11 +769,9 @@ function iform_view($node, $view_mode) {
               'table'=>$response['outer_table'],
               'id'=>$response['outer_id']
             ), $params);
-            $options=array('query'=>$params);
             // anything left in $parts is the bookmark
-            if (count($parts))
-              $options['fragment']=$parts[0];
-            drupal_goto($url, $options);
+            $fragment = count($parts) ? $parts[0] : false;
+            hostsite_goto_page($url, $params, $fragment);
           }
           elseif (!isset($args['message_after_save']) || $args['message_after_save'] || !array_key_exists('success', $response)) {
             // This dumps errors, and/or a success message if no redirection.
@@ -1470,8 +1468,9 @@ function hostsite_get_node_field_value($nid, $field) {
  * Goto a page on the host site.
  * @param string $path The page path.
  * @param array $params The params to add to the URL.
+ * @param string $fragment An optional named anchor to add to the URL.
  */
-function hostsite_goto_page($path, $params=false) {
+function hostsite_goto_page($path, $params=false, $fragment=false) {
   static $iform_redirected_to;
   if ($path===$iform_redirected_to) {
     drupal_set_message("Attempt to redirect to $path caused a redirect loop");
@@ -1479,6 +1478,8 @@ function hostsite_goto_page($path, $params=false) {
     $opts=array();
     if ($params)
       $opts['query']=$params;
+    if ($fragment)
+      $opts['query']=$fragment;
     drupal_goto($path, $opts);
   }
 }
@@ -1487,11 +1488,14 @@ function hostsite_goto_page($path, $params=false) {
  * Goto a page on the host site.
  * @param string $path The page path.
  * @param array $params The params to add to the URL.
+ * @param string $fragment An optional named anchor to add to the URL.
  */
-function hostsite_get_url($path, $params=false) {
+function hostsite_get_url($path, $params=false, $fragment=false) {
   $opts=array();
   if ($params)
     $opts['query']=$params;
+  if ($fragment)
+    $opts['query']=$fragment;
   return url($path, $opts);
 }
 
