@@ -154,7 +154,8 @@ function iform_node_access($node, $op, $account=NULL) {
     return user_access('create iform', $account) ? NODE_ACCESS_ALLOW : NODE_ACCESS_DENY;
   }
 
-  if ($op == 'view') {
+  if ($op == 'view' && $node->status) {
+    // Check view permissions if node is published.
     if (isset($node->params['view_access_control']) && $node->params['view_access_control']) {
       // Use a per node setting to control access. Use default permission name iform access <nid>, or specified one from params if available
       if (!empty($node->params['permission_name']))
