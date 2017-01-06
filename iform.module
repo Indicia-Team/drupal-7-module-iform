@@ -117,7 +117,6 @@ function iform_menu_link_alter(&$item) {
  * This is called when building the menu. Checks if the user can access the menu.
  */
 function iform_translated_menu_link_alter(&$item) {
-  //$item['access'] = FALSE;
   // look for pattern node/%.
   preg_match('/^node\/(?P<nid>\d+)/', $item['link_path'], $matches);
   if (count($matches)) {
@@ -127,7 +126,8 @@ function iform_translated_menu_link_alter(&$item) {
     }
     else {
       $node = node_load($matches['nid']);
-      $item['access'] = node_access('view', $node);
+      // Do not give access if it is already denied for another reason.
+      $item['access'] = $item['access'] && node_access('view', $node);
     }
   }
 }
