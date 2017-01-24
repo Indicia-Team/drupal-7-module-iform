@@ -50,24 +50,29 @@ function iform_licences_form_alter(&$form, &$form_state, $form_id) {
 function iform_licences_form_submit($form, &$form_state) {
   $conn = iform_get_connection_details(NULL);
   $auth = data_entry_helper::get_read_write_auth($conn['website_id'], $conn['password']);
-  $current = data_entry_helper::get_population_data(array(
-    'table' => 'users_website',
-    'extraParams' => $auth['read'] + array(
-        'user_id' => hostsite_get_user_field('indicia_user_id'),
-        'columns' => 'id'
-      ),
-    'caching' => FALSE
-  ));
-  //drupal_set_message('Not sure that would work during registration');
-  $s = data_entry_helper::build_submission(array(
-    //'website_id' => variable_get('indicia_website_id', ''),
-    'id' => $current[0]['id'],
-    'licence_id' => $form_state['values']['field_iform_licence'],
-  ), array('model' => 'users_website'));
-
-  $r = data_entry_helper::forward_post_to('users_website', $s, $auth['write_tokens']);
-  if (!isset($r['success'])) {
-    watchdog('iform', 'Error occurred when saving a user licence: '.var_export($r, true));
-    drupal_set_message(var_export($r, true), 'error');
+  $indiciaUserId = hostsite_get_user_field('indicia_user_id');
+  $existingUsersWebsiteId = null;
+  if ($indiciaUserId) {
+    $current = data_entry_helper::get_population_data(array(
+      'table' => 'users_website',
+      'extraParams' => $auth['read'] + array(
+          'user_id' => $indiciaUserId,
+          'columns' => 'id'
+        ),
+      'caching' => FALSE
+    ));
+    $values = array('licence_id' => $form_state['values']['field_iform_licence']);
+    if (count($current))
+      $values['id'] = $current[0]['id'];
+    else {
+      $values['user_id'] = $indiciaUserId;
+      $values['website_id'] = variable_get('indicia_website_id', '');
+    }
+    $s = data_entry_helper::build_submission($values, array('model' => 'users_website'));
+    $r = data_entry_helper::forward_post_to('users_website', $s, $auth['write_tokens']);
+    if (!isset($r['success'])) {
+      watchdog('iform', 'Error occurred when saving a user licence: '.var_export($r, true));
+      drupal_set_message(var_export($r, true), 'error');
+    }
   }
 }
