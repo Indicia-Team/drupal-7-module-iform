@@ -9,20 +9,25 @@ function iform_licences_form_alter(&$form, &$form_state, $form_id) {
       'extraParams' => $readAuth
     ));
     if (count($licences)) {
-      $current = data_entry_helper::get_population_data(array(
-        'table' => 'users_website',
-        'extraParams' => $readAuth + array(
-            'user_id' => hostsite_get_user_field('indicia_user_id'),
-            'columns' => 'licence_id'
-          ),
-        'caching' => FALSE
-      ));
+      $indiciaUserId = hostsite_get_user_field('indicia_user_id');
+      $currentLicenceId = null;
+      if ($indiciaUserId) {
+        $current = data_entry_helper::get_population_data(array(
+          'table' => 'users_website',
+          'extraParams' => $readAuth + array(
+              'user_id' => $indiciaUserId,
+              'columns' => 'licence_id'
+            ),
+          'caching' => FALSE
+        ));
+        $currentLicenceId = $current[0]['licence_id'];
+      }
       $options = array();
       foreach ($licences as $licence) {
         $options[$licence['id']] = "$licence[code]: $licence[title]";
       }
       $description = t('Select the licence to apply to your records.') . ' ';
-      if ($current[0]['licence_id']) {
+      if ($currentLicenceId) {
         $description .= t('If you change the selected licence then it will only affect records you enter from now on.');
       }
       else {
@@ -35,7 +40,7 @@ function iform_licences_form_alter(&$form, &$form_state, $form_id) {
         '#options' => $options,
         '#description' => $description,
         '#required' => TRUE,
-        '#default_value' => $current[0]['licence_id']
+        '#default_value' => $currentLicenceId
       );
       $form['#submit'][] = 'iform_licences_form_submit';
     }
