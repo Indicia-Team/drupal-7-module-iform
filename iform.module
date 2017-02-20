@@ -1084,6 +1084,7 @@ function iform_check_helper_config_exists() {
  */
 function iform_load_language_files($node) {
   global $language, $custom_terms, $custom_term_overrides;
+  $filePath = variable_get('file_public_path', conf_path() . '/files');
   $moduleLangFilePath = iform_client_helpers_path() . "prebuilt_forms/lang/";
   $siteSpecificLangFilePath = drupal_get_path('module', 'iform') . '/client_helpers/prebuilt_forms/lang/';
   $formLangFileName = $node->iform . '.' . $language->language . '.php';
@@ -1091,15 +1092,21 @@ function iform_load_language_files($node) {
   $formFallbackFileName = $node->iform . '.en.php';
   $nodeFallbackFileName = 'node.' . $node->nid . '.en.php';
   // Define a priority ordered list of file names that could contain the custom terms list.
+  // Files can be in files/indicia/lang, or in iform/client_helpers/prebuilt_forms/lang.
+  // Specify default.nn.php in the files/indicia/lang folder for translations to
+  // apply to all forms on the site.
+  $langFiles = array(
+    "$filePath/indicia/lang/$nodeLangFileName",
+    "$filePath/indicia/lang/$formLangFileName",
+    "$filePath/indicia/lang/default." . $language->language . '.php',
+  );
   if ($siteSpecificLangFilePath)
-    $langFiles = array(
+    $langFiles = array_merge($langFiles, array(
       $siteSpecificLangFilePath . $nodeLangFileName,
       $siteSpecificLangFilePath . $formLangFileName,
       $siteSpecificLangFilePath . $nodeFallbackFileName,
       $siteSpecificLangFilePath . $formFallbackFileName
-    );
-  else
-    $langFiles=array();
+    ));
   $langFiles = array_merge($langFiles, array(
     $moduleLangFilePath . $nodeLangFileName,
     $moduleLangFilePath . $formLangFileName,
@@ -1110,9 +1117,10 @@ function iform_load_language_files($node) {
   $custom_term_overrides=array(); // this is an array with each item a subarray of key value pairs.
   // start at the highest priority possible language file name and loop through until we find one that defines the set of custom terms.
   foreach ($langFiles as $langFile) {
-    if (file_exists($langFile))
+    if (file_exists($langFile)) {
       // Found a file to include. It might define custom_terms, or might define an entry in the custom_term_overrides array
       require $langFile;
+    }
     // finish when we have loaded an array of custom terms.
     if (count($custom_terms)>0) break;
   }
