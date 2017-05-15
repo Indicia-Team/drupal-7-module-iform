@@ -672,14 +672,14 @@ function iform_view($node, $view_mode) {
   }
   global $language;
   $helperPath=realpath(iform_client_helpers_path());
+  // preferred location for custom node configuration files now under Drupal files folder
+  $filePath = variable_get('file_public_path', conf_path() . '/files');
   if (isset($node->iform) && $node->iform!=-1) {
-    iform_load_language_files($node);
+    _iform_load_language_files($node);
+    _iform_load_template_files($helperPath, $filePath, $node);
     $args = array('language' => $language->language);
     require_once "$helperPath/prebuilt_forms/$node->iform.php";
     ob_start();
-    // also force the theme path to be local
-    global $indicia_theme_path;
-    $indicia_theme_path = iform_media_folder_path() . 'themes/';
     $connection = iform_get_connection_details($node);
     $args['base_url'] = $connection['base_url'];
     $args['website_id']=$connection['website_id'];
@@ -785,28 +785,6 @@ function iform_view($node, $view_mode) {
     // Make buttons have a hover effect
     data_entry_helper::$javascript .=  "indiciaFns.enableHoverEffect();\n";
     _iform_apply_variables_to_args($args);
-    // preferred location for custom node configuration files now under Drupal files folder
-    $filePath = variable_get('file_public_path', conf_path() . '/files');
-    // A drupal theme can override the templates
-    if (function_exists('drupal_get_path') && file_exists(drupal_get_path('theme',$GLOBALS['theme']) . '/indicia.templates.php'))
-      require drupal_get_path('theme',$GLOBALS['theme']) . '/indicia.templates.php';
-    // Or we can override the templates in the iform module, either globally, per form or per node.
-    if (file_exists("$helperPath/prebuilt_forms/templates/global.php")) 
-      require "$helperPath/prebuilt_forms/templates/global.php";    
-    if (file_exists("$helperPath/prebuilt_forms/templates/$node->iform.php"))
-      require "$helperPath/prebuilt_forms/templates/$node->iform.php";
-    if (file_exists("$helperPath/prebuilt_forms/templates/node.$node->nid.php")) 
-      require "$helperPath/prebuilt_forms/templates/node.$node->nid.php";
-    if (file_exists("$filePath/indicia/templates/node.$node->nid.php"))
-      require "$filePath/indicia/templates/node.$node->nid.php";
-    // link in custom additional template files
-    if (!empty($args['additional_templates'])) {
-      $templateFiles=data_entry_helper::explode_lines($args['additional_templates']);
-      foreach ($templateFiles as $file) {
-        $file = str_replace('{prebuiltformtemplates}', "$helperPath/prebuilt_forms/templates", $file);
-        require $file;
-      }
-    }
     // Now retrieve the form content
     try {
       $r .= call_user_func(array('iform_' . $node->iform, 'get_form'), $args, $node->nid, $response);
@@ -857,6 +835,32 @@ function iform_view($node, $view_mode) {
     );
   }
   return $node;
+}
+
+/**
+ * Loads any files which override the default templates declared in the helper_base file.
+ */
+function _iform_load_template_files($helperPath, $filePath, $node) {
+  // A drupal theme can override the templates
+  if (function_exists('drupal_get_path') && file_exists(drupal_get_path('theme',$GLOBALS['theme']) . '/indicia.templates.php'))
+    require drupal_get_path('theme',$GLOBALS['theme']) . '/indicia.templates.php';
+  // Or we can override the templates in the iform module, either globally, per form or per node.
+  if (file_exists("$helperPath/prebuilt_forms/templates/global.php"))
+    require "$helperPath/prebuilt_forms/templates/global.php";
+  if (file_exists("$helperPath/prebuilt_forms/templates/$node->iform.php"))
+    require "$helperPath/prebuilt_forms/templates/$node->iform.php";
+  if (file_exists("$helperPath/prebuilt_forms/templates/node.$node->nid.php"))
+    require "$helperPath/prebuilt_forms/templates/node.$node->nid.php";
+  if (file_exists("$filePath/indicia/templates/node.$node->nid.php"))
+    require "$filePath/indicia/templates/node.$node->nid.php";
+  // link in custom additional template files
+  if (!empty($args['additional_templates'])) {
+    $templateFiles=data_entry_helper::explode_lines($args['additional_templates']);
+    foreach ($templateFiles as $file) {
+      $file = str_replace('{prebuiltformtemplates}', "$helperPath/prebuilt_forms/templates", $file);
+      require $file;
+    }
+  }
 }
 
 function _iform_apply_variables_to_args(&$args) {
@@ -1082,8 +1086,9 @@ function iform_check_helper_config_exists() {
  * Loads language files defined for the form. This includes language files defined in the module folder or in the site specific
  * Drupal folders, and also includes files named with the form name or node nid.
  */
-function iform_load_language_files($node) {
+function _iform_load_language_files($node) {
   global $language, $custom_terms, $custom_term_overrides;
+  $filePath = variable_get('file_public_path', conf_path() . '/files');
   $moduleLangFilePath = iform_client_helpers_path() . "prebuilt_forms/lang/";
   $siteSpecificLangFilePath = drupal_get_path('module', 'iform') . '/client_helpers/prebuilt_forms/lang/';
   $formLangFileName = $node->iform . '.' . $language->language . '.php';
@@ -1091,15 +1096,21 @@ function iform_load_language_files($node) {
   $formFallbackFileName = $node->iform . '.en.php';
   $nodeFallbackFileName = 'node.' . $node->nid . '.en.php';
   // Define a priority ordered list of file names that could contain the custom terms list.
+  // Files can be in files/indicia/lang, or in iform/client_helpers/prebuilt_forms/lang.
+  // Specify default.nn.php in the files/indicia/lang folder for translations to
+  // apply to all forms on the site.
+  $langFiles = array(
+    "$filePath/indicia/lang/$nodeLangFileName",
+    "$filePath/indicia/lang/$formLangFileName",
+    "$filePath/indicia/lang/default." . $language->language . '.php',
+  );
   if ($siteSpecificLangFilePath)
-    $langFiles = array(
+    $langFiles = array_merge($langFiles, array(
       $siteSpecificLangFilePath . $nodeLangFileName,
       $siteSpecificLangFilePath . $formLangFileName,
       $siteSpecificLangFilePath . $nodeFallbackFileName,
       $siteSpecificLangFilePath . $formFallbackFileName
-    );
-  else
-    $langFiles=array();
+    ));
   $langFiles = array_merge($langFiles, array(
     $moduleLangFilePath . $nodeLangFileName,
     $moduleLangFilePath . $formLangFileName,
@@ -1110,9 +1121,10 @@ function iform_load_language_files($node) {
   $custom_term_overrides=array(); // this is an array with each item a subarray of key value pairs.
   // start at the highest priority possible language file name and loop through until we find one that defines the set of custom terms.
   foreach ($langFiles as $langFile) {
-    if (file_exists($langFile))
+    if (file_exists($langFile)) {
       // Found a file to include. It might define custom_terms, or might define an entry in the custom_term_overrides array
       require $langFile;
+    }
     // finish when we have loaded an array of custom terms.
     if (count($custom_terms)>0) break;
   }
