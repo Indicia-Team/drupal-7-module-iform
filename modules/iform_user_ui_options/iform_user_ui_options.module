@@ -19,7 +19,8 @@ function iform_user_ui_options_form_user_profile_form_alter(&$form) {
         throw new exception('Incorrect structure for $file. Missing title or choices.');
       $radioOptions = array('default' => 'Use the default settings for each page');
       foreach ($optionset['choices'] as $choiceName => $choiceSettings) {
-        $radioOptions[$choiceName] = t($choiceSettings['title']);
+        $radioOptions[$choiceName] = t($choiceSettings['title']) .
+            '<br/><div class="description">' . t($choiceSettings['description']) . '</div>';
       }
       $form['Preferences']['ui_options']["iform_user_ui_$name"] = array(
         '#type' => 'radios',
@@ -108,7 +109,7 @@ function iform_user_ui_options_preprocess_iform(&$params) {
               $tokens = explode('|', $param);
               if (!isset(data_entry_helper::$data['structureControlOverrides'][$tokens[0]]))
                 data_entry_helper::$data['structureControlOverrides'][$tokens[0]]=array();
-              data_entry_helper::$data['structureControlOverrides'][$tokens[0]][$tokens[1]]=$value;           
+              data_entry_helper::$data['structureControlOverrides'][$tokens[0]][$tokens[1]]=$value;
             }
           }
         }
