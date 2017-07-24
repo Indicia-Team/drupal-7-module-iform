@@ -283,6 +283,20 @@ function get_custom_param_values($node) {
 }
 
 /**
+ * Extracts the information for a node's group settings from either the form post data or the residual node data.
+ */
+function _iform_get_node_form_group_info($node) {
+  $r = array('available_for_groups' => isset($_POST['available_for_groups']) ? $_POST['available_for_groups'] : 
+      (isset($node->available_for_groups) ? $node->available_for_groups : 0));
+  if ($r['available_for_groups']) {
+    $r['limit_to_group_id'] = !empty($_POST['limit_to_group_id']) ? $_POST['limit_to_group_id'] : 
+        (!empty($node->limit_to_group_id) ? $node->limit_to_group_id : null);
+  } else 
+    $r['limit_to_group_id'] = null;
+  return $r;
+}
+
+/**
 * Implementation of hook_insert, which saves iform-specific information
 * into the iform table
 * @param node object
@@ -291,18 +305,16 @@ function iform_insert($node) {
   $params=get_custom_param_values($node);
   $iform = isset($_POST['iform']) ? $_POST['iform'] : $node->iform;
   $needs_review = isset($node->needs_review) ? $node->needs_review : 0;
-  $available_for_groups = isset($_POST['available_for_groups']) ? $_POST['available_for_groups'] : 
-      (isset($node->available_for_groups) ? $node->available_for_groups : 0);
-  $limit_to_group_id = !empty($_POST['limit_to_group_id']) ? $_POST['limit_to_group_id'] : 
-      (isset($node->limit_to_group_id) ? $node->limit_to_group_id : null);
+  $groupInfo = _iform_get_node_form_group_info($node);
   db_insert('iform')
-    ->fields(array('nid' => $node->nid,
-        'iform' => $iform,
-        'params' => $params,
-        'needs_review' => $needs_review,
-        'available_for_groups' => $available_for_groups,
-        'limit_to_group_id' => $limit_to_group_id))
-    ->execute();
+      ->fields(array('nid' => $node->nid,
+          'iform' => $iform,
+          'params' => $params,
+          'needs_review' => $needs_review,
+          'available_for_groups' => $groupInfo['available_for_groups'],
+          'limit_to_group_id' => $groupInfo['limit_to_group_id']
+      ))
+      ->execute();
 }
 
 /**
@@ -313,12 +325,7 @@ function iform_insert($node) {
 function iform_update($node) {
   $iform = isset($_POST['iform']) ? $_POST['iform'] : $node->iform;
   $needs_review = isset($node->needs_review) ? $node->needs_review : 0;
-  $available_for_groups = isset($_POST['available_for_groups']) ? $_POST['available_for_groups'] : 
-      (isset($node->available_for_groups) ? $node->available_for_groups : 0);
-  $limit_to_group_id = isset($_POST['limit_to_group_id']) ? $_POST['limit_to_group_id'] :
-      (isset($node->limit_to_group_id) ? $node->limit_to_group_id : null);
-  if ($limit_to_group_id==='')
-    $limit_to_group_id = null;
+  $groupInfo = _iform_get_node_form_group_info($node);
   // updating an iform, when needs_review=3, means that the features module has detected that a form in default state
   // has had its code changed so needs to be reflected in the database. In this case we actually need to merge the
   // params together so that user params are not lost.
@@ -334,8 +341,8 @@ function iform_update($node) {
         'iform'=>$iform,
         'params'=>$params,
         'needs_review'=>$needs_review,
-        'available_for_groups'=>$available_for_groups,
-        'limit_to_group_id'=>$limit_to_group_id
+        'available_for_groups' => $groupInfo['available_for_groups'],
+        'limit_to_group_id' => $groupInfo['limit_to_group_id']
       ))
       ->condition('nid', $node->nid)
       ->execute();
