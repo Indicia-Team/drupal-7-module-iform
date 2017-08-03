@@ -1166,6 +1166,9 @@ function iform_load_helpers(array $files, $base_url='') {
     else {
       helper_config::$base_url = empty($base_url) ? variable_get('indicia_base_url', helper_config::$base_url) : $base_url;
       helper_config::$geoserver_url = variable_get('indicia_geoserver_url', helper_config::$geoserver_url);
+      if(property_exists('helper_base', 'max_warehouse_url_length')) {
+        helper_base::$max_warehouse_url_length = variable_get('indicia_max_warehouse_url_length', helper_base::$max_warehouse_url_length);
+      }
     }
     if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']!=='off') {
       helper_config::$base_url = preg_replace('/^http:/', 'https:', helper_config::$base_url);

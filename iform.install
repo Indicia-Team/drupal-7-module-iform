@@ -79,6 +79,7 @@ function iform_uninstall() {
   variable_del('indicia_allow_connection_override');
   variable_del('indicia_base_url');
   variable_del('indicia_geoserver_url');
+  variable_del('indicia_max_warehouse_url_length');
   variable_del('indicia_geoplanet_api_key');
   variable_del('indicia_google_api_key');
   variable_del('indicia_google_maps_api_key');
