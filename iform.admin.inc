@@ -56,6 +56,17 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
     '#required' => FALSE,
     '#default_value' => variable_get('indicia_private_warehouse', FALSE),
   );
+  $form['indicia_max_warehouse_url_length'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Maximum warehouse url length'),
+    '#description' => t('Webservers have a limit to the size of URL they will accept for GET requests. ' .
+        'In some rare extreme situations, requests may be made that exceed these limits. ' .
+        'In these cases, the GET request can be converted to a POST (this is non-RestFUL, but is preferable to an error). ' .
+        'The actual maximum length depends on the webserver - for example IIS and Apache differ - and this field allows you to set a figure appropriate for your warehouse. ' .
+        'By default the figure is 8100, which is appropriate for Apache.'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('indicia_max_warehouse_url_length', 8100),
+  );
   $form['indicia_allow_connection_override'] = array(
     '#type' => 'checkbox',
     '#title' => t('Allow website connection override'),
@@ -407,6 +418,7 @@ function indicia_configuration_form_submit($form, &$form_state) {
   variable_set('indicia_base_url', $urls['base_url']);
   variable_set('indicia_geoserver_url', $urls['geoserver_url']);
   variable_set('indicia_private_warehouse', $form_state['values']['indicia_private_warehouse']);
+  variable_set('indicia_max_warehouse_url_length', $form_state['values']['indicia_max_warehouse_url_length']);
   variable_set('indicia_allow_connection_override', $form_state['values']['indicia_allow_connection_override']);
   variable_set('indicia_website_id', $form_state['values']['indicia_website_id']);
   if (!empty($form_state['values']['indicia_password']))
