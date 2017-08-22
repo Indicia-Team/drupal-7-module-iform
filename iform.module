@@ -1376,11 +1376,12 @@ function hostsite_user_has_permission($task, $uid = FALSE) {
 }
 
 /**
- * Enable a library in rhw host website.
+ * Enable a library in the host website.
  * @param string $library Name of the library. The following are supported:
  * 
- * collapse - To enable collapsible fieldsets. Requires the class collapsible to be added to a fieldset.
- * jquery-ui - Adds the jQuery ui library with tab and datepicker support.
+ * * collapse - To enable collapsible fieldsets. Requires the class collapsible to be added to a fieldset.
+ * * jquery-ui - Adds the jQuery ui library with tab and datepicker support.
+ * * jquery-ui-slider - Additional jQuery ui library for the slider.
  */
 function hostsite_add_library($library) {
   switch ($library) {
@@ -1398,6 +1399,8 @@ function hostsite_add_library($library) {
       drupal_add_library('system', 'effects.fade');
       drupal_add_library('system', 'effects.slide');
       break;
+    case 'jquery-ui-slider':
+      drupal_add_library('system', 'ui.slider');
     default: 
       watchdog('iform', "Unknown library requested: $library");
   }
