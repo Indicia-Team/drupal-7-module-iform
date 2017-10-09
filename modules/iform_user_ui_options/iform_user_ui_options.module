@@ -39,7 +39,7 @@ function iform_user_ui_options_form_user_profile_form_alter(&$form) {
   }
   // Hide warehouse link and remembered field mappings unless admin.
   if (!user_access('administer users')) {
-    unset($form['field_iform_ui_options']);
+    $form['field_iform_ui_options']['#access'] = FALSE;
   }
   // Add a validation handler.
   $form['#validate'][] = 'iform_user_ui_options_form_submit';
