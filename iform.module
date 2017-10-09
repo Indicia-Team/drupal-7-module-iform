@@ -952,6 +952,9 @@ function handle_resources() {
           elseif (strcasecmp(substr($j, -23), 'jquery-ui.custom.min.js')==0) {
             hostsite_add_library('jquery-ui');
           }
+          elseif (strcasecmp(substr($j, -20), 'indicia.functions.js')==0) {
+            // Don't add standard functions twice as it can mess up the sort order.
+          }
           elseif (substr($j, 0, 4)=='[IE]') {
             drupal_add_html_head("<!--[if IE]><script type=\"text/javascript\" src=\"" . substr($j, 4) . "\"></script><![endif]-->\n");
           }
