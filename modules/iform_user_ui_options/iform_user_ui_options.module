@@ -10,7 +10,7 @@
  * Implements hook_user_profile_form_alter.
  *
  * Adds radio buttons to the end of the preferences tab of a user account to allow the user to select from any
- * available user interface configuration choices.
+ * available user interface configuration choices. Also hides the config settings.
  */
 function iform_user_ui_options_form_user_profile_form_alter(&$form) {
   $currentOpts = json_decode(hostsite_get_user_field('iform_ui_options', '{}'), TRUE);
@@ -36,6 +36,11 @@ function iform_user_ui_options_form_user_profile_form_alter(&$form) {
       );
     }
   }
+  // Hide warehouse link and remembered field mappings unless admin.
+  if (!user_access('administer users')) {
+    unset($form['field_iform_ui_options']);
+  }
+  // Add a validation handler.
   $form['#validate'][] = 'iform_user_ui_options_form_submit';
 }
 
@@ -49,7 +54,7 @@ function iform_user_ui_options_load_config() {
   if (!isset($config)) {
     $config = array();
     $configPath = file_default_scheme() . ':/' . '/iform_user_ui_options';
-    $files=scandir($configPath);
+    $files = scandir($configPath);
     foreach ($files as $file) {
       $parts = explode('.', $file);
       if ($file === '.' || $file === '..' || count($parts) < 2 || $parts[1] !== 'json') {
