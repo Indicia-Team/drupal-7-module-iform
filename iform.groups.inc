@@ -175,6 +175,8 @@ function iform_show_group_join_success($group, $auth, $alreadyAMember=false, $gr
         'orderby' => 'caption'
       )
   ));
+  $group['title'] = t($group['title']);
+  $group['description'] = t($group['description']);
   $welcome = t("Welcome to the @group!", array('@group' => iform_readable_group_title($group)));
 
   // Let the user choose if they want to go to a group page
@@ -199,10 +201,10 @@ function iform_show_group_join_success($group, $auth, $alreadyAMember=false, $gr
     $r .= '<li class="' . $class . '"><a class="button" href="' . hostsite_get_url($page['path'], array(
         'group_id' => $group['id'],
         'implicit' => $group['implicit_record_inclusion']
-      )) . '">' . lang::get($page['caption']) . '</a></li>';
+      )) . '">' . t($page['caption']) . '</a></li>';
   }
   if (!empty($groups_list_path))
-    $r .= '<li><a href="'.hostsite_get_url($groups_list_path).'">'.lang::get("Return to your recording groups list").'<a></li>';
+    $r .= '<li><a href="'.hostsite_get_url($groups_list_path).'">' . t("Return to your recording groups list") . '<a></li>';
   $r .= '</ul></div>';
   return $r;
 }

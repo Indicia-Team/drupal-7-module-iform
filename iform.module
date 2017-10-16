@@ -7,7 +7,7 @@ if (!defined('PHP_VERSION_ID')) {
 
     define('PHP_VERSION_ID', ($version[0] * 10000 + $version[1] * 100 + $version[2]));
 }
-  
+
 /**
 * Display help and module information
 * @param path which path of the site we're displaying help
@@ -33,7 +33,7 @@ function iform_help($path, $arg) {
 function iform_permission() {
   $retVal = array(
     'access iform' => array(
-      'title' => t('Access Indicia Iform web pages'), 
+      'title' => t('Access Indicia Iform web pages'),
     ), 'create iform' => array(
       'title' => t('Create IForm web pages')
     ), 'edit iform' => array(
@@ -162,7 +162,7 @@ function iform_node_access($node, $op, $account=NULL) {
         return user_access($node->params['permission_name']) ? NODE_ACCESS_ALLOW : NODE_ACCESS_DENY;
       else
         return user_access('access iform ' . $node->nid, $account) ? NODE_ACCESS_ALLOW : NODE_ACCESS_DENY;
-    } 
+    }
     else {
       // Use the generic setting for Indicia forms to control access.
       return user_access('access iform', $account) ? NODE_ACCESS_ALLOW : NODE_ACCESS_DENY;
@@ -173,7 +173,7 @@ function iform_node_access($node, $op, $account=NULL) {
   if ($op == 'update' || $op == 'delete') {
     if (user_access('edit own iform', $account) && ($account->uid == $node->uid)) {
       return NODE_ACCESS_ALLOW;
-    } 
+    }
     else {
       return user_access('edit iform', $account) ? NODE_ACCESS_ALLOW : NODE_ACCESS_DENY;
     }
@@ -236,7 +236,7 @@ function iform_form(&$node, $form_state) {
       '#suffix' => '</div>'
     );
     form_helper::enable_validation('node-form');
-  } 
+  }
   else {
     $form['iform_forms']['form-params'] = array(
       '#markup' => ' ', // must be a space or Drupal drops the div
@@ -276,10 +276,24 @@ function get_custom_param_values($node) {
     }
     // Json encode the parameters to store them in the Drupal database.
     return json_encode($values);
-  } 
+  }
   else {
     return json_encode($node->params);
   }
+}
+
+/**
+ * Extracts the information for a node's group settings from either the form post data or the residual node data.
+ */
+function _iform_get_node_form_group_info($node) {
+  $r = array('available_for_groups' => isset($_POST['available_for_groups']) ? $_POST['available_for_groups'] :
+      (isset($node->available_for_groups) ? $node->available_for_groups : 0));
+  if ($r['available_for_groups']) {
+    $r['limit_to_group_id'] = !empty($_POST['limit_to_group_id']) ? $_POST['limit_to_group_id'] :
+        (!empty($node->limit_to_group_id) ? $node->limit_to_group_id : null);
+  } else
+    $r['limit_to_group_id'] = null;
+  return $r;
 }
 
 /**
@@ -291,18 +305,16 @@ function iform_insert($node) {
   $params=get_custom_param_values($node);
   $iform = isset($_POST['iform']) ? $_POST['iform'] : $node->iform;
   $needs_review = isset($node->needs_review) ? $node->needs_review : 0;
-  $available_for_groups = isset($_POST['available_for_groups']) ? $_POST['available_for_groups'] : 
-      (isset($node->available_for_groups) ? $node->available_for_groups : 0);
-  $limit_to_group_id = !empty($_POST['limit_to_group_id']) ? $_POST['limit_to_group_id'] : 
-      (isset($node->limit_to_group_id) ? $node->limit_to_group_id : null);
+  $groupInfo = _iform_get_node_form_group_info($node);
   db_insert('iform')
-    ->fields(array('nid' => $node->nid,
-        'iform' => $iform,
-        'params' => $params,
-        'needs_review' => $needs_review,
-        'available_for_groups' => $available_for_groups,
-        'limit_to_group_id' => $limit_to_group_id))
-    ->execute();
+      ->fields(array('nid' => $node->nid,
+          'iform' => $iform,
+          'params' => $params,
+          'needs_review' => $needs_review,
+          'available_for_groups' => $groupInfo['available_for_groups'],
+          'limit_to_group_id' => $groupInfo['limit_to_group_id']
+      ))
+      ->execute();
 }
 
 /**
@@ -313,12 +325,7 @@ function iform_insert($node) {
 function iform_update($node) {
   $iform = isset($_POST['iform']) ? $_POST['iform'] : $node->iform;
   $needs_review = isset($node->needs_review) ? $node->needs_review : 0;
-  $available_for_groups = isset($_POST['available_for_groups']) ? $_POST['available_for_groups'] : 
-      (isset($node->available_for_groups) ? $node->available_for_groups : 0);
-  $limit_to_group_id = isset($_POST['limit_to_group_id']) ? $_POST['limit_to_group_id'] :
-      (isset($node->limit_to_group_id) ? $node->limit_to_group_id : null);
-  if ($limit_to_group_id==='')
-    $limit_to_group_id = null;
+  $groupInfo = _iform_get_node_form_group_info($node);
   // updating an iform, when needs_review=3, means that the features module has detected that a form in default state
   // has had its code changed so needs to be reflected in the database. In this case we actually need to merge the
   // params together so that user params are not lost.
@@ -334,8 +341,8 @@ function iform_update($node) {
         'iform'=>$iform,
         'params'=>$params,
         'needs_review'=>$needs_review,
-        'available_for_groups'=>$available_for_groups,
-        'limit_to_group_id'=>$limit_to_group_id
+        'available_for_groups' => $groupInfo['available_for_groups'],
+        'limit_to_group_id' => $groupInfo['limit_to_group_id']
       ))
       ->condition('nid', $node->nid)
       ->execute();
@@ -377,7 +384,7 @@ function iform_load($nodes) {
           drupal_set_message(check_plain(t('This page\'s configuration has not been stored correctly. ' . print_r($node->params, TRUE)), 'warning'));
         if (is_array($params))
           // Merge the params into the loaded object
-          foreach ($params as $k => $v) 
+          foreach ($params as $k => $v)
             $node->params[$k] = $v;
       }
     }
@@ -536,7 +543,7 @@ function iform_features_review() {
         ))
         ->condition('nid', $_POST['form-works'])
         ->execute();
-  } 
+  }
   elseif (isset($_POST['form-settings'])) {
     // saving site specific settings for a form. Merge the new params into the existing ones
     // and resave the node
@@ -578,7 +585,7 @@ function iform_features_review() {
           . '<input type="submit" value="' . t('Save Form Settings') . '" /></form>';
       form_helper::enable_validation('iform-' . $row['nid']);
       $gotForms = TRUE;
-    } 
+    }
     else {
       $r .= '<p>' . t('This form is ready to use and does not require further review. You can <a href="!pathedit" target="_blank">edit the form\'s ' .
           'configuration</a> if you require advanced configuration options or <a href="!pathview" target="_blank">view the form</a> to ' .
@@ -598,7 +605,7 @@ function iform_features_review() {
       handle_resources();
     }
     return $r;
-  } 
+  }
   else {
     return '<p>' . t('There are no Indicia Features pages which need to be reviewed.') . '</p>';
   }
@@ -608,8 +615,8 @@ function iform_features_review() {
  * Utility method that gets the base_url, website_id and password appropriate to connect
  * a given node to the warehouse.
  * @param mixed $node A node object or nid.
- * @return array Connection details, including website_id and password. Also 
- * contains a boolean using_drupal_vars which is true if the site-wide 
+ * @return array Connection details, including website_id and password. Also
+ * contains a boolean using_drupal_vars which is true if the site-wide
  * configuration is being used.
  */
 function iform_get_connection_details($node) {
@@ -659,7 +666,7 @@ function iform_view($node, $view_mode) {
     global $user;
     if (user_access('edit iform')) {
       $msg = l(t('Please review your Indicia forms'), 'admin/build/features/indicia');
-    } 
+    }
     else
       $msg = t('Please contact the site administrator.');
     $r = t('This form has been added by enabling an Indicia Feature but its configuration needs to be reviewed before use.') .
@@ -741,7 +748,7 @@ function iform_view($node, $view_mode) {
         }
         if (!empty($errors)) {
           $r .= data_entry_helper::dump_errors(array('errors' => $errors));
-        } 
+        }
         else {
           $response = data_entry_helper::forward_post_to('save', $s);
           // Does the form redirect after success?
@@ -802,6 +809,7 @@ function iform_view($node, $view_mode) {
 
     // Link in the default site css
     drupal_add_css(iform_media_folder_path() . 'css/default_site.css');
+    drupal_add_css(iform_media_folder_path() . 'css/theme-generic.css');
 
     // Link in the custom css file if present.
     if (file_exists(iform_client_helpers_path() . 'prebuilt_forms/css/' . $node->iform . '.css'))
@@ -900,7 +908,7 @@ function iform_check_needs_review($node) {
     }
     if ($form) {
       return TRUE;
-    } 
+    }
     else {
      // mark node as imported but no need for review
       $node->needs_review=1;
@@ -953,7 +961,7 @@ function handle_resources() {
           elseif (substr($j, 0, 4)=='http') {
             // JS file external to Drupal. add_js will not work, so insert it into the head manually.
             drupal_add_js($j, 'external');
-          } 
+          }
           elseif (strcasecmp(substr($j, -20), 'jquery-ui.effects.js')!=0) {
             // JS file within Drupal structure. Drupal will add base_path() to the beginning as it expects a relative path not absolute
             $j = preg_replace('/^' . str_replace('/', '\/', base_path()) . '/', '', $j);
@@ -1005,7 +1013,7 @@ function iform_get_form_resource_attachments() {
             // JS file external to Drupal. add_js will not work, so insert it into the head manually.
             // THIS WORKS NOW?
             drupal_add_html_head("<script type='text/javascript' src='$j'></script>");
-          } 
+          }
           elseif (strcasecmp(substr($j, -20), 'jquery-ui.effects.js')!=0) {
             // JS file within Drupal structure. Drupal will add base_path() to the beginning as it expects a relative path not absolute
             $j = preg_replace('/^' . str_replace('/', '\/', base_path()) . '/', '', $j);
@@ -1029,7 +1037,7 @@ function iform_get_form_resource_attachments() {
 
 /**
  * Adds a jQuery closure around a piece of JavaScript for D7 compatibility.
- * @param type $js 
+ * @param type $js
  */
 function iform_js_closure($js) {
   return "(function ($) {
@@ -1162,6 +1170,9 @@ function iform_load_helpers(array $files, $base_url='') {
     else {
       helper_config::$base_url = empty($base_url) ? variable_get('indicia_base_url', helper_config::$base_url) : $base_url;
       helper_config::$geoserver_url = variable_get('indicia_geoserver_url', helper_config::$geoserver_url);
+      if(property_exists('helper_base', 'max_warehouse_url_length')) {
+        helper_base::$max_warehouse_url_length = variable_get('indicia_max_warehouse_url_length', helper_base::$max_warehouse_url_length);
+      }
     }
     if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']!=='off') {
       helper_config::$base_url = preg_replace('/^http:/', 'https:', helper_config::$base_url);
@@ -1281,24 +1292,24 @@ function iform_client_helpers_path() {
  * Function that allows Indicia code to hook into the Drupal user fields to find
  * out a field value, without introducing a Drupal code dependency.
  * @global type $user
- * @param string $field Name of a user field to return. This can be 
- *   'language' which returns a user's 2 character language code, 
- *   'id' to return the user's ID, 
- *   'name' to return their username, 
+ * @param string $field Name of a user field to return. This can be
+ *   'language' which returns a user's 2 character language code,
+ *   'id' to return the user's ID,
+ *   'name' to return their username,
  *   'mail' tp return or their email
  *   a user field, e.g. indicia_user_id as introduced by the Easy Login feature.
  *   This will be converted to the  field name if not prefixed with 'field_'.
  * @param mixed $default Default value to return if not set.
  * @param boolean $array Set to true if this field allows multiple values so you need an array
  * @param type $uid User ID of user to load data for. Defaults to current user.
- * @return mixed 
+ * @return mixed
  */
 function hostsite_get_user_field($field, $default = false, $array = false, $uid = false) {
   global $user;
-  if ($field === 'uid') 
+  if ($field === 'uid')
     return $uid === false ? $user->uid : $uid;
   $account = $uid !== false ? user_load($uid) : $user;
-  // Only load the account's language if inspecting another user, else use the UI language. 
+  // Only load the account's language if inspecting another user, else use the UI language.
   if ($field === 'language' && isset($account->language) && $uid && $user->uid !== $uid)
     return $account->language;
   else if ($field === 'language') {
@@ -1350,14 +1361,14 @@ function hostsite_set_user_field($field, $data) {
     $account->$fieldname = $field;
     $info = field_info_field($fieldname);
     $fields = array($info['id']);
-     
+
     // Execute the storage function
     field_sql_storage_field_storage_write('user', $account, 'update', $fields);
-     
+
     // Clear field cache
     cache_clear_all("field:user:$account->uid", 'cache_field');
     return TRUE;
-  } 
+  }
   return FALSE;
 }
 
@@ -1372,11 +1383,12 @@ function hostsite_user_has_permission($task, $uid = FALSE) {
 }
 
 /**
- * Enable a library in rhw host website.
+ * Enable a library in the host website.
  * @param string $library Name of the library. The following are supported:
- * 
- * collapse - To enable collapsible fieldsets. Requires the class collapsible to be added to a fieldset.
- * jquery-ui - Adds the jQuery ui library with tab and datepicker support.
+ *
+ * * collapse - To enable collapsible fieldsets. Requires the class collapsible to be added to a fieldset.
+ * * jquery-ui - Adds the jQuery ui library with tab and datepicker support.
+ * * jquery-ui-slider - Additional jQuery ui library for the slider.
  */
 function hostsite_add_library($library) {
   switch ($library) {
@@ -1394,7 +1406,9 @@ function hostsite_add_library($library) {
       drupal_add_library('system', 'effects.fade');
       drupal_add_library('system', 'effects.slide');
       break;
-    default: 
+    case 'jquery-ui-slider':
+      drupal_add_library('system', 'ui.slider');
+    default:
       watchdog('iform', "Unknown library requested: $library");
   }
 }
@@ -1408,10 +1422,10 @@ function hostsite_show_message($msg, $type='status') {
   drupal_set_message($msg, $type);
 }
 
-/** 
+/**
  * Set a breadcrumb trail in the host site.
- * @param array $breadcrumb An associative array where keys are untranslated breadcrumb 
- * terms and values are the page to go to. The home page is automatically inserted at the 
+ * @param array $breadcrumb An associative array where keys are untranslated breadcrumb
+ * terms and values are the page to go to. The home page is automatically inserted at the
  * start and the current page at the end.
  * @param boolean $includeCurrentPage Set to true to add the current page title to the
  * end of the breadcrumb. This might be better handled by a global setting in the theme
@@ -1610,10 +1624,10 @@ function hostsite_mime_header_encode($string) {
 }
 
 /**
- * Returns a list of website IDs that this website is allowed use data for. This is defined by the agreement between the 
+ * Returns a list of website IDs that this website is allowed use data for. This is defined by the agreement between the
  * 2 websites and depends on the exact task being performed.
  * @param array $readAuth Read authorisation tokens
- * @param string $purpose One of reporting, peer_review, verification, data_flow, moderation. Default is 'reporting'. If the 
+ * @param string $purpose One of reporting, peer_review, verification, data_flow, moderation. Default is 'reporting'. If the
  * agreement defines that the other website provides data to this website for this purpose, then the other website is included.
  * @return array List of website IDs that accesss is allowed for.
  */
@@ -1623,7 +1637,7 @@ function iform_get_allowed_website_ids($readAuth, $purpose='reporting') {
     'extraParams' => $readAuth+array('sharing' => $purpose),
   ));
   $websiteIds = array();
-  foreach ($websites as $website) 
+  foreach ($websites as $website)
     $websiteIds[] = $website['id'];
   return $websiteIds;
 }
