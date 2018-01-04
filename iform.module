@@ -1199,6 +1199,8 @@ function iform_load_helpers(array $files, $base_url='') {
         isset(helper_config::$google_api_key) ? helper_config::$google_api_key : '');
     helper_base::$google_maps_api_key = variable_get('indicia_google_maps_api_key',
         isset(helper_config::$google_maps_api_key) ? helper_config::$google_maps_api_key : '');
+    helper_base::$os_api_key = variable_get('indicia_os_api_key',
+        isset(helper_config::$os_api_key) ? helper_config::$os_api_key : '');
 
     // bing api key may be ommitted for backwards compatibility reasons
     if (isset(helper_config::$bing_api_key))
