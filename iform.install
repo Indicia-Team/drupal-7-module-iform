@@ -80,7 +80,6 @@ function iform_uninstall() {
   variable_del('indicia_base_url');
   variable_del('indicia_geoserver_url');
   variable_del('indicia_max_warehouse_url_length');
-  variable_del('indicia_geoplanet_api_key');
   variable_del('indicia_google_api_key');
   variable_del('indicia_google_maps_api_key');
   variable_del('indicia_bing_api_key');
@@ -91,6 +90,9 @@ function iform_uninstall() {
   variable_del('indicia_map_centroid_long');
   variable_del('indicia_map_zoom');
   variable_del('indicia_spatial_systems');
+
+  // This variable is deprecated but might exist from pre 1.54.4 installs.
+  variable_del('indicia_geoplanet_api_key');
 }
 
 /**
