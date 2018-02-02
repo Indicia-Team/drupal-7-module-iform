@@ -100,16 +100,6 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
     '#type' => 'fieldset',
     '#title' => t('API Keys')
   );
-  $form['api_keys']['indicia_geoplanet_api_key'] = array(
-    '#type' => 'textfield',
-    '#title' => t('GeoPlanet API Key'),
-    '#description' => t('The Yahoo! GeoPlanet API is one option to lookup place names when you use the place search control. ' .
-        'It references a global database of places and returns the list of possibilities with their spatial references ' .
-        'to Indicia. To obtain your own API key for GeoPlanet, please visit <a target="_blank" href="http://developer.yahoo.com/geo/geoplanet/">' .
-        'Yahoo! GeoPlanet</a> and follow the link to get an Application ID. '),
-    '#required' => FALSE,
-    '#default_value' => variable_get('indicia_geoplanet_api_key', helper_config::$geoplanet_api_key),
-  );
   $form['api_keys']['indicia_google_api_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Google API Key'),
@@ -141,6 +131,16 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
         'you read and adhere to the <a href="http://www.microsoft.com/maps/product/terms.html">terms of use</a>.'),
     '#required' => FALSE,
     '#default_value' => variable_get('indicia_bing_api_key', ''),
+  );
+  $form['api_keys']['indicia_os_api_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Ordnace Survey API Key'),
+    '#description' => t('The Ordnance Survey API key is required to allow use of OS map layers but can be left blank ' .
+        'if you do not intend to use OS maps. To obtain your own key, please visit ' .
+        '<a target="_blank" href="https://developer.ordnancesurvey.co.uk/os-maps-api-enterprise">OS Maps API for ' .
+        'Enterprise</a>. There is a free trial but this is a paid-for service.'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('indicia_os_api_key', ''),
   );
   $form['map'] = array(
     '#type' => 'fieldset',
@@ -423,10 +423,10 @@ function indicia_configuration_form_submit($form, &$form_state) {
   variable_set('indicia_website_id', $form_state['values']['indicia_website_id']);
   if (!empty($form_state['values']['indicia_password']))
     variable_set('indicia_password', $form_state['values']['indicia_password']);
-  variable_set('indicia_geoplanet_api_key', $form_state['values']['indicia_geoplanet_api_key']);
   variable_set('indicia_google_api_key', $form_state['values']['indicia_google_api_key']);
   variable_set('indicia_google_maps_api_key', $form_state['values']['indicia_google_maps_api_key']);
   variable_set('indicia_bing_api_key', $form_state['values']['indicia_bing_api_key']);
+  variable_set('indicia_os_api_key', $form_state['values']['indicia_os_api_key']);
   variable_set('indicia_map_centroid_lat', $form_state['values']['indicia_map_centroid_lat']);
   variable_set('indicia_map_centroid_long', $form_state['values']['indicia_map_centroid_long']);
   variable_set('indicia_map_zoom', $form_state['values']['indicia_map_zoom']);
