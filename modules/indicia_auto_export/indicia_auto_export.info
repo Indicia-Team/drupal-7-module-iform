@@ -1,0 +1,7 @@
+; $Id$
+name = Indicia auto export
+description = Provides a content type allowing automation of record exports.
+core = 7.x
+package = "Indicia"
+dependencies[] = iform
+dependencies[] = date
