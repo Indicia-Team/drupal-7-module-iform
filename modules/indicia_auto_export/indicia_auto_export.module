@@ -281,6 +281,9 @@ function indicia_auto_export_run_export($exportNodeWrapper) {
   try {
     iform_load_helpers(['data_entry_helper']);
     $readAuth = data_entry_helper::get_read_auth(variable_get('indicia_website_id'), variable_get('indicia_password'));
+    if (empty($exportNodeWrapper->field_indicia_ae_filter->value())) {
+      throw new exception('Filter empty for export ' . $exportNodeWrapper->title->value());
+    }
     $filterCriteria = indicia_auto_export_get_filter_params(
       $exportNodeWrapper->field_indicia_ae_filter->value(),
       $readAuth
@@ -324,9 +327,6 @@ function indicia_auto_export_run_export($exportNodeWrapper) {
  *   Key/value pairs for the filter to apply.
  */
 function indicia_auto_export_get_filter_params($filter, $readAuth) {
-  if (empty($filter)) {
-    throw new exception('Filter empty for export ' . $exportNodeWrapper->title->value());
-  }
   // Split the filter into ID and caption.
   $filterTokens = explode(':', $filter);
   $filterData = data_entry_helper::get_population_data([
@@ -336,7 +336,12 @@ function indicia_auto_export_get_filter_params($filter, $readAuth) {
   if (count($filterData) !== 1) {
     throw new exception('Export filter not found for export ' . $exportNodeWrapper->title->value());
   }
-  $def = json_decode($filterData[0]['definition']);
+  $def = json_decode($filterData[0]['definition'], TRUE);
+  $def = array_merge([
+    // @todo Make this configurable.
+    'output_sref_systems' => 'OSGB,OSIE',
+    'zero_abundance' => '0',
+  ], $def);
   $filterCriteria = [];
   foreach ($def as $key => $value) {
     if ($key) {
@@ -347,6 +352,15 @@ function indicia_auto_export_get_filter_params($filter, $readAuth) {
   return $filterCriteria;
 }
 
+/**
+ * Calls a warehouse web service URL in order to retrieve a download.
+ *
+ * Saves the downloaded data as a file.
+ *
+ * @param object $exportNodeWrapper
+ *   Node entity wrapper for the export definition.
+ * @param string $url Web service URL to request the download from.
+ */
 function indicia_auto_export_process_download($exportNodeWrapper, $url) {
   $fileName = empty($exportNodeWrapper->field_indicia_ae_dataset_id->value())
     ? str_replace(' ', '_', $exportNodeWrapper->title->value()) : $exportNodeWrapper->field_indicia_ae_dataset_id->value();
