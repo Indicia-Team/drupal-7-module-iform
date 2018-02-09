@@ -181,7 +181,7 @@ function _indicia_auto_export_field_definitions() {
       'max_length' => 255,
     ],
     'widget' => 'text_textfield',
-    'default_value' => 'library/occurrences/filterable_dwc_occurrences.xml',
+    'default_value' => 'library/occurrences/filterable_dwc_nbn_occurrences.xml',
     'required' => TRUE,
   ];
   $fields[] = [
