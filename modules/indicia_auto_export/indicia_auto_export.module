@@ -369,6 +369,10 @@ function indicia_auto_export_process_download($exportNodeWrapper, $url) {
   curl_setopt($session, CURLOPT_FILE, $fileHandle);
   curl_setopt($session, CURLOPT_HEADER, 0);
   curl_setopt($session, CURLOPT_BINARYTRANSFER, TRUE);
+  if (!empty($exportNodeWrapper->field_indicia_ae_eml->value())) {
+    curl_setopt($session, CURLOPT_POST, 1);
+    curl_setopt($session, CURLOPT_POSTFIELDS, 'eml=' . urlencode($exportNodeWrapper->field_indicia_ae_eml->value()));
+  }
   curl_setopt($session, CURLOPT_WRITEFUNCTION, function ($cp, $data) use ($fileHandle) {
     return fwrite($fileHandle, $data);
   });
