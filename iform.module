@@ -951,7 +951,7 @@ function handle_resources() {
           if (strcasecmp(substr($j, -9), 'jQuery.js')==0) {
             // No need to load jquery.js in Drupal 7 as it loads automatically if there is any other JavaScript
           }
-          elseif (strcasecmp(substr($j, -16), 'jquery-ui.min.js')==0) {
+          elseif (preg_match('/jquery\-ui(\.custom)?\.min\.js$/', $j)) {
             hostsite_add_library('jquery-ui');
           }
           elseif (strcasecmp(substr($j, -20), 'indicia.functions.js')==0) {
