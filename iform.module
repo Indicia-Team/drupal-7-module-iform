@@ -934,7 +934,9 @@ function handle_resources() {
   if (isset(data_entry_helper::$required_resources)) {
     $resourceList = data_entry_helper::get_resources();
     foreach (data_entry_helper::$required_resources as $resource) {
-      if (isset($resourceList[$resource]['stylesheets'])) {
+      // Add stylesheets, skipping jQuery UI as Drupal will add it when we add
+      // the library.
+      if (isset($resourceList[$resource]['stylesheets']) && $resource !== 'jquery_ui') {
         foreach ($resourceList[$resource]['stylesheets'] as $s) {
           $s = preg_replace('/^' . str_replace('/', '\/', base_path()) . '/', '', $s);
           drupal_add_css($s);
@@ -949,7 +951,7 @@ function handle_resources() {
           if (strcasecmp(substr($j, -9), 'jQuery.js')==0) {
             // No need to load jquery.js in Drupal 7 as it loads automatically if there is any other JavaScript
           }
-          elseif (strcasecmp(substr($j, -23), 'jquery-ui.custom.min.js')==0) {
+          elseif (strcasecmp(substr($j, -16), 'jquery-ui.min.js')==0) {
             hostsite_add_library('jquery-ui');
           }
           elseif (strcasecmp(substr($j, -20), 'indicia.functions.js')==0) {
