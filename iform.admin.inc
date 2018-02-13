@@ -132,6 +132,16 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
     '#required' => FALSE,
     '#default_value' => variable_get('indicia_bing_api_key', ''),
   );
+  $form['api_keys']['indicia_os_api_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Ordnace Survey API Key'),
+    '#description' => t('The Ordnance Survey API key is required to allow use of OS map layers but can be left blank ' .
+        'if you do not intend to use OS maps. To obtain your own key, please visit ' .
+        '<a target="_blank" href="https://developer.ordnancesurvey.co.uk/os-maps-api-enterprise">OS Maps API for ' .
+        'Enterprise</a>. There is a free trial but this is a paid-for service.'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('indicia_os_api_key', ''),
+  );
   $form['map'] = array(
     '#type' => 'fieldset',
     '#title' => t('Map Settings')
@@ -416,6 +426,7 @@ function indicia_configuration_form_submit($form, &$form_state) {
   variable_set('indicia_google_api_key', $form_state['values']['indicia_google_api_key']);
   variable_set('indicia_google_maps_api_key', $form_state['values']['indicia_google_maps_api_key']);
   variable_set('indicia_bing_api_key', $form_state['values']['indicia_bing_api_key']);
+  variable_set('indicia_os_api_key', $form_state['values']['indicia_os_api_key']);
   variable_set('indicia_map_centroid_lat', $form_state['values']['indicia_map_centroid_lat']);
   variable_set('indicia_map_centroid_long', $form_state['values']['indicia_map_centroid_long']);
   variable_set('indicia_map_zoom', $form_state['values']['indicia_map_zoom']);

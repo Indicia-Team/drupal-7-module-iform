@@ -1,0 +1,394 @@
+<?php
+
+/**
+ * @file
+ * Module for the Indicia auto export module.
+ *
+ * Indicia, the OPAL Online Recording Toolkit.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/gpl.html.
+ *
+ * @author Indicia Team
+ * @license http://www.gnu.org/licenses/gpl.html GPL 3.0
+ * @link https://github.com/Indicia-Team/drupal-7-module-iform/
+ */
+
+/**
+ * Implements hook_menu().
+ *
+ * Adds a callback for adding an export to the queue to be processed.
+ */
+function indicia_auto_export_menu() {
+  $items['indicia_auto_export/process'] = array(
+    'page callback' => 'indicia_auto_export_process_callback',
+    'access arguments' => array('administer indicia_auto_export'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Callback method which adds an export to the Drupal queue.
+ *
+ * The queue will then be processed at the next cron run.
+ *
+ * @param int $nid
+ *   Node ID of the export node.
+ */
+function indicia_auto_export_process_callback($nid) {
+  $exportNode = node_load($nid);
+  $exportNodeWrapper = entity_metadata_wrapper('node', $exportNode);
+  $currentStatus = $exportNodeWrapper->field_indicia_ae_status->value();
+  // If already queud or processing, don't re-queue.
+  if ($currentStatus === 'queued') {
+    drupal_set_message(
+      $exportNodeWrapper->title->value() . ' is already queued and will be processed at the next cron run.'
+    );
+  }
+  elseif ($currentStatus === 'processing') {
+    drupal_set_message(
+      $exportNodeWrapper->title->value() . ' is already being processed.'
+    );
+  }
+  else {
+    // Add the export to the Drupal queue.
+    $q = DrupalQueue::get('indicia_auto_export');
+    $q->createItem($exportNodeWrapper);
+    // Flag the node as queued.
+    $exportNodeWrapper->field_indicia_ae_status->set('queued');
+    $exportNodeWrapper->save();
+    // Inform the user.
+    drupal_set_message($exportNodeWrapper->title->value() . ' has been queued');
+  }
+  drupal_goto('exports');
+}
+
+/**
+ * Implements hook_node_info().
+ *
+ * Creates a content type for managing metadata regarding each export.
+ */
+function indicia_auto_export_node_info() {
+  return array(
+    'indicia_auto_export' => array(
+      'name' => t('Indicia auto export'),
+      'base' => 'node_content',
+      'description' => t('Defines an automated export of Indicia records.'),
+      'locked' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_form().
+ *
+ * Required to enable the edit form for the content type.
+ */
+function indicia_auto_export_form($node, $form_state) {
+  return node_content_form($node, $form_state);
+}
+
+/**
+ * Implements hook_field_widget_info().
+ *
+ * Declares a widget for the edit form which looks up a filter from the
+ * Indicia warehouse.
+ */
+function indicia_auto_export_field_widget_info() {
+  return [
+    'indicia_autocomplete_filters' => [
+      'label' => t('Indicia autocomplete filters'),
+      'field types' => ['text'],
+      'settings' => ['size' => 60],
+      'behaviors' => [
+        'multiple values' => FIELD_BEHAVIOR_DEFAULT,
+        'default value' => FIELD_BEHAVIOR_DEFAULT,
+      ],
+    ],
+  ];
+}
+
+/**
+ * Implements hook_field_widget_form().
+ *
+ * Creates the form element required for the filter lookup widget.
+ */
+function indicia_auto_export_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  if ($instance['widget']['type'] === 'indicia_autocomplete_filters') {
+    iform_load_helpers(['data_entry_helper']);
+    $readAuth = data_entry_helper::get_read_auth(variable_get('indicia_website_id'), variable_get('indicia_password'));
+    // Field value is stored as <filterId>:<caption>.
+    $value = isset($items[$delta]['value']) ? $items[$delta]['value'] : ':';
+    list($idValue, $captionValue) = explode(':', $value, 2);
+
+    $widget = $element;
+    $widget['#delta'] = $delta;
+    $widget += [
+      '#markup' => data_entry_helper::autocomplete([
+        'label' => t('Indicia filter'),
+        'fieldname' => $field['field_name'],
+        'table' => 'filter',
+        'valueField' => 'id',
+        'captionField' => 'title',
+        'extraParams' => $readAuth,
+        'default' => $idValue,
+        'defaultCaption' => $captionValue,
+        'validation' => ['required'],
+        'class' => 'text-full form-text',
+        'helpText' => 'Search for the filter to use to limit the records in the download.',
+      ]),
+    ];
+    drupal_add_css(drupal_get_path('module', 'indicia_auto_export') . '/css/admin.css', array('group' => CSS_DEFAULT));
+    handle_resources();
+    $element['af'] = $widget;
+  }
+  return $element;
+}
+
+/**
+ * Implements hook_node_presave().
+ *
+ * Perform some processing of field values when the export node's form is
+ * saved.
+ */
+function indicia_auto_export_node_presave($node) {
+  if ($node->type === 'indicia_auto_export') {
+    if (!empty($_POST['field_indicia_ae_filter']) && !empty($_POST['field_indicia_ae_filter:title'])) {
+      // Store both the filter ID and caption in the field value as the caption
+      // makes it readable.
+      $value = $_POST['field_indicia_ae_filter'] . ':' . $_POST['field_indicia_ae_filter:title'];
+      $node->field_indicia_ae_filter[LANGUAGE_NONE][0]['value'] = $value;
+    }
+    // If scheduling enabled and due date not already set, set it.
+    if ($node->field_indicia_ae_schedule[LANGUAGE_NONE][0]['value'] !== 'manual'
+        && empty($node->field_indicia_ae_due_date[LANGUAGE_NONE])) {
+      if (empty($node->field_indicia_ae_last_date[LANGUAGE_NONE])) {
+        // Export not run before so we'll trigger at the next cron.
+        $dueOn = strtotime('now');
+      }
+      else {
+        // Export has run before, so add some time to the last run date
+        // according to the schedule.
+        $dueOn = indicia_auto_export_calculate_due_date(
+          $node->field_indicia_ae_schedule[LANGUAGE_NONE][0]['value'],
+          $node->field_indicia_ae_last_date[LANGUAGE_NONE][0]['value']
+        );
+      }
+      $node->field_indicia_ae_due_date[LANGUAGE_NONE][0] = array(
+        'value' => format_date($dueOn, 'custom', 'Y-m-d H:i:s', 'UTC'),
+        'timezone' => 'UTC',
+        'timezone_db' => 'UTC',
+      );
+    }
+    // Set the processing status if not already set. Waiting if due, otherwise
+    // inactive.
+    if (empty($node->field_indicia_ae_status[LANGUAGE_NONE])) {
+      $node->field_indicia_ae_status[LANGUAGE_NONE][0] = array(
+        'value' => empty($node->field_indicia_ae_due_date[LANGUAGE_NONE]) ? 'inactive' : 'waiting'
+      );
+    }
+  }
+}
+
+/**
+ * Calculates when an export is next due.
+ *
+ * @param string $schedule
+ *   Schedule, e.g. daily, weekly, monthly.
+ * @param string $lastDate
+ *   Date/time string for when the export was last processed.
+ *
+ * @return datetime
+ *   Next due date/time.
+ */
+function indicia_auto_export_calculate_due_date($schedule, $lastDate) {
+  switch ($schedule) {
+    case 'daily':
+      $frequency = '1 day';
+      break;
+
+    case 'weekly':
+      $frequency = '1 week';
+      break;
+
+    case 'monthly':
+      $frequency = '1 month';
+  }
+  return strtotime($lastDate . "+$frequency");
+}
+
+/**
+ * Implements hook_cron().
+ *
+ * Adds any due exports to the Drupal queue.
+ */
+function indicia_auto_export_cron() {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node')
+    ->propertyCondition('status', 1)
+    ->propertyCondition('type', 'indicia_auto_export')
+    ->fieldCondition('field_indicia_ae_due_date', 'value', 'NULL', '!=')
+    ->fieldCondition('field_indicia_ae_due_date', 'value', format_date(strtotime('now'), 'custom', 'Y-m-d H:i:s', 'UTC'), '<')
+    ->fieldOrderBy('field_indicia_ae_due_date', 'value', 'DESC')
+    ->range(0, 5);
+  $result = $query->execute();
+  if (isset($result['node'])) {
+    $nids = array_keys($result['node']);
+    $exports = entity_load('node', $nids);
+    foreach ($exports as $exportNode) {
+      echo 'Add to queue ' . $exportNode->title . '<br/>';
+      $q = DrupalQueue::get('indicia_auto_export');
+      $exportNodeWrapper = entity_metadata_wrapper('node', $exportNode);
+      $exportNodeWrapper->field_indicia_ae_status->set('queued');
+      $exportNodeWrapper->save();
+      $q->createItem($exportNodeWrapper);
+    }
+  }
+}
+
+/**
+ * Implements hook_cron_queue_info().
+ *
+ * Declares a queue for sequential processing of exports.
+ */
+function indicia_auto_export_cron_queue_info() {
+  $queues['indicia_auto_export'] = array(
+    // This is the callback function for each queue item.
+    'worker callback' => 'indicia_auto_export_run_export',
+  );
+  return $queues;
+}
+
+/**
+ * Callback to process an item on our export queue.
+ *
+ * @param object $exportNodeWrapper
+ *   Node EntityQueryWrapper object for the export to process.
+ */
+function indicia_auto_export_run_export($exportNodeWrapper) {
+  $exportNodeWrapper->field_indicia_ae_status->set('processing');
+  $exportNodeWrapper->save();
+  echo 'Processing ' . $exportNodeWrapper->title->value() . '<br/>';
+  try {
+    iform_load_helpers(['data_entry_helper']);
+    $readAuth = data_entry_helper::get_read_auth(variable_get('indicia_website_id'), variable_get('indicia_password'));
+    if (empty($exportNodeWrapper->field_indicia_ae_filter->value())) {
+      throw new exception('Filter empty for export ' . $exportNodeWrapper->title->value());
+    }
+    $filterCriteria = indicia_auto_export_get_filter_params(
+      $exportNodeWrapper->field_indicia_ae_filter->value(),
+      $readAuth
+    );
+    $url = data_entry_helper::$base_url . 'index.php/services/report/requestReport' .
+      '?report=' . $exportNodeWrapper->field_indicia_ae_report_path->value() .
+      '&mode=' . $exportNodeWrapper->field_indicia_ae_format->value() .
+      "&reportSource=local&auth_token=$readAuth[auth_token]&nonce=$readAuth[nonce]" .
+      '&' . http_build_query($filterCriteria);
+    // Download from the warehouse into a local file.
+    indicia_auto_export_process_download($exportNodeWrapper, $url);
+    // If successful, set record of last run date.
+    $exportNodeWrapper->field_indicia_ae_last_date->set(strtotime('now'));
+    // Update the next due date if a schedule set.
+    if ($exportNodeWrapper->field_indicia_ae_schedule->value() !== 'manual') {
+      $dueOn = indicia_auto_export_calculate_due_date($exportNodeWrapper->field_indicia_ae_schedule->value(), 'now');
+      $exportNodeWrapper->field_indicia_ae_due_date->set($dueOn);
+    }
+  }
+  catch (Exception $e) {
+    echo 'Error: ' . $e->getMessage() . '<br/>';
+    watchdog(
+      'indicia_auto_export',
+      'Export failed for @title. Error was @error.',
+      ['@title' => $exportNodeWrapper->title->value(), '@error' => $e->getMessage()],
+      WATCHDOG_ERROR
+    );
+  }
+  $exportNodeWrapper->field_indicia_ae_status->set('waiting');
+  $exportNodeWrapper->save();
+  echo 'Finished ' . $exportNodeWrapper->title->value() . '<br/>';
+}
+
+/**
+ * Retrieve the filter parameters from the warehouse for a stored filter.
+ *
+ * @param string $filter
+ *   Stored filter in id:name format.
+ *
+ * @return array
+ *   Key/value pairs for the filter to apply.
+ */
+function indicia_auto_export_get_filter_params($filter, $readAuth) {
+  // Split the filter into ID and caption.
+  $filterTokens = explode(':', $filter);
+  $filterData = data_entry_helper::get_population_data([
+    'table' => 'filter',
+    'extraParams' => array('id' => $filterTokens[0]) + $readAuth,
+  ]);
+  if (count($filterData) !== 1) {
+    throw new exception('Export filter not found for export ' . $exportNodeWrapper->title->value());
+  }
+  $def = json_decode($filterData[0]['definition'], TRUE);
+  $def = array_merge([
+    // @todo Make this configurable.
+    'output_sref_systems' => 'OSGB,OSIE',
+    'zero_abundance' => '0',
+  ], $def);
+  $filterCriteria = [];
+  foreach ($def as $key => $value) {
+    if ($key) {
+      $value = is_array($value) ? json_encode($value) : $value;
+      $filterCriteria["{$key}_context"] = $value;
+    }
+  }
+  return $filterCriteria;
+}
+
+/**
+ * Calls a warehouse web service URL in order to retrieve a download.
+ *
+ * Saves the downloaded data as a file.
+ *
+ * @param object $exportNodeWrapper
+ *   Node entity wrapper for the export definition.
+ * @param string $url Web service URL to request the download from.
+ */
+function indicia_auto_export_process_download($exportNodeWrapper, $url) {
+  $fileName = empty($exportNodeWrapper->field_indicia_ae_dataset_id->value())
+    ? str_replace(' ', '_', $exportNodeWrapper->title->value()) : $exportNodeWrapper->field_indicia_ae_dataset_id->value();
+  $ext = $exportNodeWrapper->field_indicia_ae_format->value() === 'dwca'
+    ? 'zip' : $exportNodeWrapper->field_indicia_ae_format->value();
+  // Use private files if available.
+  $destType = empty(drupal_realpath('private://')) ? 'public' : 'private';
+  $filePath = drupal_realpath("$destType://") . "/indicia/exports";
+  if (!file_exists($filePath)) {
+    echo "Dir $filePath does not exist so attempting to create it.<br/>";
+    if (!mkdir($filePath, 0744, TRUE)) {
+      throw new exception(
+        'No permission to create directory $filePath. Please create the directory manually.'
+      );
+    }
+  }
+  $fileHandle = fopen("$filePath/$fileName.$ext", 'w+');
+  $session = curl_init($url);
+  curl_setopt($session, CURLOPT_RETURNTRANSFER, TRUE);
+  curl_setopt($session, CURLOPT_FILE, $fileHandle);
+  curl_setopt($session, CURLOPT_HEADER, 0);
+  curl_setopt($session, CURLOPT_BINARYTRANSFER, TRUE);
+  if (!empty($exportNodeWrapper->field_indicia_ae_eml->value())) {
+    curl_setopt($session, CURLOPT_POST, 1);
+    curl_setopt($session, CURLOPT_POSTFIELDS, 'eml=' . urlencode($exportNodeWrapper->field_indicia_ae_eml->value()));
+  }
+  curl_setopt($session, CURLOPT_WRITEFUNCTION, function ($cp, $data) use ($fileHandle) {
+    return fwrite($fileHandle, $data);
+  });
+  curl_exec($session);
+}

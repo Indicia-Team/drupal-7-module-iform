@@ -934,6 +934,7 @@ function handle_resources() {
   if (isset(data_entry_helper::$required_resources)) {
     $resourceList = data_entry_helper::get_resources();
     foreach (data_entry_helper::$required_resources as $resource) {
+      // Add stylesheets.
       if (isset($resourceList[$resource]['stylesheets'])) {
         foreach ($resourceList[$resource]['stylesheets'] as $s) {
           $s = preg_replace('/^' . str_replace('/', '\/', base_path()) . '/', '', $s);
@@ -949,7 +950,7 @@ function handle_resources() {
           if (strcasecmp(substr($j, -9), 'jQuery.js')==0) {
             // No need to load jquery.js in Drupal 7 as it loads automatically if there is any other JavaScript
           }
-          elseif (strcasecmp(substr($j, -23), 'jquery-ui.custom.min.js')==0) {
+          elseif (preg_match('/jquery\-ui(\.custom)?\.min\.js$/', $j)) {
             hostsite_add_library('jquery-ui');
           }
           elseif (strcasecmp(substr($j, -20), 'indicia.functions.js')==0) {
@@ -1198,8 +1199,11 @@ function iform_load_helpers(array $files, $base_url='') {
         isset(helper_config::$google_api_key) ? helper_config::$google_api_key : '');
     helper_base::$google_maps_api_key = variable_get('indicia_google_maps_api_key',
         isset(helper_config::$google_maps_api_key) ? helper_config::$google_maps_api_key : '');
-
-    // bing api key may be ommitted for backwards compatibility reasons
+    // OS api key may be ommitted for backwards compatibility reasons.
+    if (isset(helper_config::$os_api_key)) {
+      helper_base::$os_api_key = variable_get('indicia_os_api_key', helper_config::$os_api_key);
+    }
+    // Bing api key may be ommitted for backwards compatibility reasons.
     if (isset(helper_config::$bing_api_key))
       helper_config::$bing_api_key = variable_get('indicia_bing_api_key', helper_config::$bing_api_key);
   }

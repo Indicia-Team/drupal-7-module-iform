@@ -1,0 +1,8 @@
+#ctrl-wrap-field_indicia_ae_filter input {
+  width: 80%;
+}
+p.helpText {
+  margin-top: 0;
+  color: gray;
+  font-style: italic;
+}

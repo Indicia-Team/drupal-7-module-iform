@@ -1,0 +1,309 @@
+<?php
+
+/**
+ * @file
+ * Install functions for the Indicia auto export module.
+ *
+ * Indicia, the OPAL Online Recording Toolkit.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/gpl.html.
+ *
+ * @author Indicia Team
+ * @license http://www.gnu.org/licenses/gpl.html GPL 3.0
+ * @link https://github.com/Indicia-Team/drupal-7-module-iform/
+ */
+
+/**
+ * Implements hook_install().
+ *
+ * Creates the content type for export management.
+ */
+function indicia_auto_export_install() {
+  // During installation, the t() function is unavailable, so we use get_t()
+  // to store the name of the translation function.
+  $t = get_t();
+
+  // We define the node type as an associative array.
+  $typeDef = array(
+    'type' => 'indicia_auto_export',
+    'name' => t('Indicia auto export'),
+    'base' => 'node_content',
+    'description' => t('Defines an automated export of Indicia records.'),
+    'locked' => TRUE,
+    'custom' => TRUE,
+  );
+
+  // Complete the node type definition by setting any defaults not explicitly
+  // declared above.
+  // http://api.drupal.org/api/function/node_type_set_defaults/7
+  $contentType = node_type_set_defaults($typeDef);
+  node_add_body_field($contentType, 'Description');
+  // Save the content type.
+  node_type_save($contentType);
+
+  // Content type settings.
+  // Don't promote.
+  variable_set('node_options_indicia_auto_export', array('status'));
+  // No comments.
+  variable_set('comment_indicia_auto_export', COMMENT_NODE_CLOSED);
+  // No author/date info.
+  variable_set('node_submitted_indicia_auto_export', FALSE);
+
+  // Don't want a summary on the body.
+  $field_instance = field_info_instance('node', 'body', 'indicia_auto_export');
+  $field_instance['settings']['display_summary'] = FALSE;
+  field_update_instance($field_instance);
+
+  $fields = _indicia_auto_export_field_definitions();
+  foreach ($fields as $field) {
+    _indicia_auto_export_add_field($contentType, $field);
+  }
+
+}
+
+/**
+ * Implements hook_uninstall().
+ *
+ * Cleans up the content type and associated fields.
+ */
+function indicia_auto_export_uninstall() {
+  // By this point the 'indicia_auto_export' content type will be marked as
+  // disabled in the {node_type} db table, and this causes errors in
+  // hook_node_type_delete(). To avoid this we reset the node_type cache and
+  // call node_types_rebuild(). This makes the database query not exclude
+  // disabled content types, and the result is stored in the cache for the
+  // remainder of the page request.
+  // @see https://www.drupal.org/node/2500119
+  node_type_cache_reset();
+  node_types_rebuild();
+  // Gather all the example content that might have been created while this
+  // module was enabled.  Simple selects still use db_query().
+  // http://api.drupal.org/api/function/db_query/7
+  $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'indicia_auto_export'));
+  $nids = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+
+  // Delete all the nodes at once.
+  node_delete_multiple($nids);
+
+  // Delete the fields we created.
+  $fields = _indicia_auto_export_field_definitions();
+  foreach ($fields as $field) {
+    field_delete_field($field['name']);
+  }
+  // Loop over any remaining field instances attached to the content type.
+  $instances = field_info_instances('node', 'indicia_auto_export');
+  foreach ($instances as $instance_name => $instance) {
+    field_delete_instance($instance);
+  }
+  node_type_delete('indicia_auto_export');
+
+  // Purge all field infromation.
+  field_purge_batch(1000);
+
+  // Clean up variables.
+  variable_del('node_options_indicia_auto_export');
+  variable_del('comment_indicia_auto_export');
+  variable_del('node_submitted_indicia_auto_export');
+}
+
+/**
+ * Fetch a list of the content fields this module creates.
+ *
+ * @return array
+ *   List of fields.
+ */
+function _indicia_auto_export_field_definitions() {
+  $fields = [];
+  $fields[] = [
+    'label' => 'Schedule',
+    'name' => 'field_indicia_ae_schedule',
+    'type' => 'list_text',
+    'fieldSettings' => [
+      'allowed_values' => [
+        'manual' => 'Manual',
+        'daily' => 'Daily',
+        'weekly' => 'Weekly',
+        'monthly' => 'Monthly',
+      ],
+    ],
+    'widget' => 'options_select',
+    'required' => TRUE,
+  ];
+  $fields[] = [
+    'label' => 'Format',
+    'name' => 'field_indicia_ae_format',
+    'type' => 'list_text',
+    'fieldSettings' => [
+      'allowed_values' => [
+        'dwca' => 'Darwin Core Archive (DwC-A)',
+        'csv' => 'Comma Separated Values (CSV)',
+        'tsv' => 'Tab Separated Values (TSV)',
+        'kml' => 'Keyhole Markup Language (KML/Google Earth)',
+        'json' => 'JavaScript Object Notation (JSON)',
+      ],
+    ],
+    'widget' => 'options_select',
+    'required' => TRUE,
+  ];
+  $fields[] = [
+    'label' => 'EML',
+    'name' => 'field_indicia_ae_eml',
+    'type' => 'text_long',
+    'widget' => 'text_textarea',
+  ];
+  $fields[] = [
+    'label' => 'Dataset ID',
+    'name' => 'field_indicia_ae_dataset_id',
+    'type' => 'text',
+    'fieldSettings' => [
+      'max_length' => 255,
+    ],
+    'widget' => 'text_textfield',
+  ];
+  $fields[] = [
+    'label' => 'Report path',
+    'name' => 'field_indicia_ae_report_path',
+    'type' => 'text',
+    'fieldSettings' => [
+      'max_length' => 255,
+    ],
+    'widget' => 'text_textfield',
+    'default_value' => 'library/occurrences/filterable_dwc_nbn_occurrences.xml',
+    'required' => TRUE,
+  ];
+  $fields[] = [
+    'label' => 'Filter',
+    'name' => 'field_indicia_ae_filter',
+    'type' => 'text',
+    'fieldSettings' => [
+      'max_length' => 255,
+    ],
+    'widget' => 'indicia_autocomplete_filters',
+    'required' => TRUE,
+  ];
+  $fields[] = [
+    'label' => 'Last export date',
+    'name' => 'field_indicia_ae_last_date',
+    'type' => 'datetime',
+    'fieldSettings' => [
+      'repeat' => 0,
+      'granularity' => array(
+        'year' => 'year',
+        'month' => 'month',
+        'day' => 'day',
+        'hour' => 'hour',
+        'minute' => 'minute',
+      ),
+      'tz_handling' => 'none',
+      'todate' => FALSE,
+    ],
+    'widget' => 'date_text',
+    'instanceSettings' => [
+      'default_value' => NULL,
+    ],
+  ];
+  $fields[] = [
+    'label' => 'Export due on date',
+    'name' => 'field_indicia_ae_due_date',
+    'type' => 'datetime',
+    'fieldSettings' => [
+      'repeat' => 0,
+      'granularity' => array(
+        'year' => 'year',
+        'month' => 'month',
+        'day' => 'day',
+        'hour' => 'hour',
+        'minute' => 'minute',
+      ),
+      'tz_handling' => 'none',
+      'todate' => FALSE,
+    ],
+    'widget' => 'date_text',
+    'instanceSettings' => [
+      'default_value' => NULL,
+    ],
+  ];
+  $fields[] = [
+    'label' => 'Status',
+    'name' => 'field_indicia_ae_status',
+    'type' => 'list_text',
+    'fieldSettings' => [
+      'allowed_values' => [
+        'inactive' => 'Inactive',
+        'waiting' => 'Waiting',
+        'queued' => 'Queued',
+        'processing' => 'Processing',
+      ],
+    ],
+    'widget' => 'options_select',
+    'required' => TRUE,
+  ];
+  return $fields;
+}
+
+/**
+ * Adds a field and a field instance to our content type.
+ *
+ * @param object $contentType
+ *   Content type.
+ * @param array $fieldDef
+ *   Definition of the field.
+ */
+function _indicia_auto_export_add_field($contentType, array $fieldDef) {
+  // Defaults.
+  $fieldDef = array_merge([
+    'fieldSettings' => [],
+    'instanceSettings' => [],
+    'required' => FALSE,
+  ], $fieldDef);
+  $fieldDef['instanceSettings'] = array_merge([
+    'text_processing' => 0,
+  ], $fieldDef['instanceSettings']);
+
+  // Add or remove the body field, as needed.
+  $field = field_info_field($fieldDef['name']);
+  $instance = field_info_instance('node', $fieldDef['name'], $contentType->type);
+  if (empty($field)) {
+    $field = array(
+      'field_name' => $fieldDef['name'],
+      'type' => $fieldDef['type'],
+      'entity_types' => array('node'),
+      'settings' => $fieldDef['fieldSettings'],
+    );
+    $field = field_create_field($field);
+  }
+  if (empty($instance)) {
+    $instance = array(
+      'field_name' => $fieldDef['name'],
+      'entity_type' => 'node',
+      'bundle' => $contentType->type,
+      'label' => $fieldDef['label'],
+      'widget' => array('type' => $fieldDef['widget']),
+      'settings' => $fieldDef['instanceSettings'],
+      'required' => $fieldDef['required'],
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+        ),
+      ),
+    );
+    if (isset($fieldDef['default_value'])) {
+      $instance['default_value'] = [['value' => $fieldDef['default_value']]];
+    }
+    $instance = field_create_instance($instance);
+  }
+  return $instance;
+}

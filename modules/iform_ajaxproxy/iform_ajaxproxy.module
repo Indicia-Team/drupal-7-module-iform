@@ -127,6 +127,9 @@ function iform_ajaxproxy_proxy() {
       if (!array_key_exists('website_id', $_POST)) {
         $error = t("Indicia website_id not provided in POST.");
       }
+      elseif ($_POST['website_id'] != $conn['website_id']) {
+        $error = t("Indicia website_id in POST does not match the stored website ID.");
+      }
     }
   }
   if ($error) {
@@ -369,6 +372,10 @@ function iform_ajaxproxy_proxy() {
 
       case "groups_user":
         $model = data_entry_helper::wrap($_POST, 'groups_user');
+        break;
+
+      case "scratchpad_list":
+        $model = data_entry_helper::wrap($_POST, 'scratchpad_list');
         break;
 
       default:
