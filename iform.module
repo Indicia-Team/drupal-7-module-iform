@@ -934,9 +934,8 @@ function handle_resources() {
   if (isset(data_entry_helper::$required_resources)) {
     $resourceList = data_entry_helper::get_resources();
     foreach (data_entry_helper::$required_resources as $resource) {
-      // Add stylesheets, skipping jQuery UI as Drupal will add it when we add
-      // the library.
-      if (isset($resourceList[$resource]['stylesheets']) && $resource !== 'jquery_ui') {
+      // Add stylesheets.
+      if (isset($resourceList[$resource]['stylesheets'])) {
         foreach ($resourceList[$resource]['stylesheets'] as $s) {
           $s = preg_replace('/^' . str_replace('/', '\/', base_path()) . '/', '', $s);
           drupal_add_css($s);
