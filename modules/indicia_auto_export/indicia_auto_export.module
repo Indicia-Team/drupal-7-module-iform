@@ -292,7 +292,7 @@ function indicia_auto_export_run_export($exportNodeWrapper) {
       '?report=' . $exportNodeWrapper->field_indicia_ae_report_path->value() .
       '&mode=' . $exportNodeWrapper->field_indicia_ae_format->value() .
       "&reportSource=local&auth_token=$readAuth[auth_token]&nonce=$readAuth[nonce]" .
-      '&' . http_build_query($filterCriteria);
+      '&' . http_build_query($filterCriteria, '', '&');
     // Download from the warehouse into a local file.
     indicia_auto_export_process_download($exportNodeWrapper, $url);
     // If successful, set record of last run date.
