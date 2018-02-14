@@ -302,6 +302,9 @@ function indicia_auto_export_run_export($exportNodeWrapper) {
       $dueOn = indicia_auto_export_calculate_due_date($exportNodeWrapper->field_indicia_ae_schedule->value(), 'now');
       $exportNodeWrapper->field_indicia_ae_due_date->set($dueOn);
     }
+    $exportNodeWrapper->field_indicia_ae_status->set(
+      empty($exportNodeWrapper->field_indicia_ae_due_date->value()) ? 'inactive' : 'waiting'
+    );
   }
   catch (Exception $e) {
     echo 'Error: ' . $e->getMessage() . '<br/>';
@@ -311,8 +314,9 @@ function indicia_auto_export_run_export($exportNodeWrapper) {
       ['@title' => $exportNodeWrapper->title->value(), '@error' => $e->getMessage()],
       WATCHDOG_ERROR
     );
+    $exportNodeWrapper->field_indicia_ae_status->set('error');
   }
-  $exportNodeWrapper->field_indicia_ae_status->set('waiting');
+
   $exportNodeWrapper->save();
   echo 'Finished ' . $exportNodeWrapper->title->value() . '<br/>';
 }

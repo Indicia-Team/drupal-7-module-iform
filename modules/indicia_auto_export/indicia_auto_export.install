@@ -246,10 +246,10 @@ function _indicia_auto_export_field_definitions() {
         'waiting' => 'Waiting',
         'queued' => 'Queued',
         'processing' => 'Processing',
+        'error' => 'Error occurred',
       ],
     ],
     'widget' => 'options_select',
-    'required' => TRUE,
   ];
   return $fields;
 }
