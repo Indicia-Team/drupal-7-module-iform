@@ -155,6 +155,18 @@ function indicia_auto_export_field_widget_form(&$form, &$form_state, $field, $in
 }
 
 /**
+ * Implements hook_node_validate().
+ */
+function indicia_auto_export_node_validate($node) {
+  if (empty($_POST['field_indicia_ae_filter']) || empty($_POST['field_indicia_ae_filter:title'])) {
+    form_set_error(
+      'indicia_ae_filter',
+      t('The filter must be specified to determine the records to include in the export.')
+    );
+  }
+}
+
+/**
  * Implements hook_node_presave().
  *
  * Perform some processing of field values when the export node's form is
@@ -292,7 +304,7 @@ function indicia_auto_export_run_export($exportNodeWrapper) {
       '?report=' . $exportNodeWrapper->field_indicia_ae_report_path->value() .
       '&mode=' . $exportNodeWrapper->field_indicia_ae_format->value() .
       "&reportSource=local&auth_token=$readAuth[auth_token]&nonce=$readAuth[nonce]" .
-      '&' . http_build_query($filterCriteria);
+      '&' . http_build_query($filterCriteria, '', '&');
     // Download from the warehouse into a local file.
     indicia_auto_export_process_download($exportNodeWrapper, $url);
     // If successful, set record of last run date.
@@ -302,6 +314,9 @@ function indicia_auto_export_run_export($exportNodeWrapper) {
       $dueOn = indicia_auto_export_calculate_due_date($exportNodeWrapper->field_indicia_ae_schedule->value(), 'now');
       $exportNodeWrapper->field_indicia_ae_due_date->set($dueOn);
     }
+    $exportNodeWrapper->field_indicia_ae_status->set(
+      empty($exportNodeWrapper->field_indicia_ae_due_date->value()) ? 'inactive' : 'waiting'
+    );
   }
   catch (Exception $e) {
     echo 'Error: ' . $e->getMessage() . '<br/>';
@@ -311,8 +326,9 @@ function indicia_auto_export_run_export($exportNodeWrapper) {
       ['@title' => $exportNodeWrapper->title->value(), '@error' => $e->getMessage()],
       WATCHDOG_ERROR
     );
+    $exportNodeWrapper->field_indicia_ae_status->set('error');
   }
-  $exportNodeWrapper->field_indicia_ae_status->set('waiting');
+
   $exportNodeWrapper->save();
   echo 'Finished ' . $exportNodeWrapper->title->value() . '<br/>';
 }
