@@ -158,11 +158,13 @@ function indicia_auto_export_field_widget_form(&$form, &$form_state, $field, $in
  * Implements hook_node_validate().
  */
 function indicia_auto_export_node_validate($node) {
-  if (empty($_POST['field_indicia_ae_filter']) || empty($_POST['field_indicia_ae_filter:title'])) {
-    form_set_error(
-      'indicia_ae_filter',
-      t('The filter must be specified to determine the records to include in the export.')
-    );
+  if ($node->type === 'indicia_auto_export') {
+    if (empty($_POST['field_indicia_ae_filter']) || empty($_POST['field_indicia_ae_filter:title'])) {
+      form_set_error(
+        'indicia_ae_filter',
+        t('The filter must be specified to determine the records to include in the export.')
+      );
+    }
   }
 }
 
