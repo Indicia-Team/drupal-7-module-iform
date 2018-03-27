@@ -165,8 +165,17 @@ function _indicia_auto_export_field_definitions() {
     'widget' => 'text_textarea',
   ];
   $fields[] = [
-    'label' => 'Dataset ID',
-    'name' => 'field_indicia_ae_dataset_id',
+    'label' => 'Dataset name',
+    'name' => 'field_indicia_ae_dataset_name',
+    'type' => 'text',
+    'fieldSettings' => [
+      'max_length' => 255,
+    ],
+    'widget' => 'text_textfield',
+  ];
+  $fields[] = [
+    'label' => 'Rights holder',
+    'name' => 'field_indicia_ae_rights_holder',
     'type' => 'text',
     'fieldSettings' => [
       'max_length' => 255,
