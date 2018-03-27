@@ -298,15 +298,23 @@ function indicia_auto_export_run_export($exportNodeWrapper) {
     if (empty($exportNodeWrapper->field_indicia_ae_filter->value())) {
       throw new exception('Filter empty for export ' . $exportNodeWrapper->title->value());
     }
-    $filterCriteria = indicia_auto_export_get_filter_params(
+    $params = indicia_auto_export_get_filter_params(
       $exportNodeWrapper->field_indicia_ae_filter->value(),
       $readAuth
     );
+    // Pass through alues provided in the export node fields that apply to the
+    // whole export.
+    if (!empty($exportNodeWrapper->field_indicia_ae_dataset_name->value())) {
+      $params['dataset_name'] = $exportNodeWrapper->field_indicia_ae_dataset_name->value();
+    }
+    if (!empty($exportNodeWrapper->field_indicia_ae_rights_holder->value())) {
+      $params['rights_holder'] = $exportNodeWrapper->field_indicia_ae_rights_holder->value();
+    }
     $url = data_entry_helper::$base_url . 'index.php/services/report/requestReport' .
       '?report=' . $exportNodeWrapper->field_indicia_ae_report_path->value() .
       '&mode=' . $exportNodeWrapper->field_indicia_ae_format->value() .
       "&sharing=data_flow&reportSource=local&auth_token=$readAuth[auth_token]&nonce=$readAuth[nonce]" .
-      '&' . http_build_query($filterCriteria, '', '&');
+      '&' . http_build_query($params, '', '&');
     // Download from the warehouse into a local file.
     indicia_auto_export_process_download($exportNodeWrapper, $url);
     // If successful, set record of last run date.
@@ -380,8 +388,8 @@ function indicia_auto_export_get_filter_params($filter, $readAuth) {
  * @param string $url Web service URL to request the download from.
  */
 function indicia_auto_export_process_download($exportNodeWrapper, $url) {
-  $fileName = empty($exportNodeWrapper->field_indicia_ae_dataset_id->value())
-    ? str_replace(' ', '_', $exportNodeWrapper->title->value()) : $exportNodeWrapper->field_indicia_ae_dataset_id->value();
+  $fileName = empty($exportNodeWrapper->field_indicia_ae_dataset_name->value())
+    ? str_replace(' ', '_', $exportNodeWrapper->title->value()) : $exportNodeWrapper->field_indicia_ae_dataset_name->value();
   $ext = $exportNodeWrapper->field_indicia_ae_format->value() === 'dwca'
     ? 'zip' : $exportNodeWrapper->field_indicia_ae_format->value();
   // Use private files if available.
