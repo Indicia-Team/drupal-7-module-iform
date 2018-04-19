@@ -2,7 +2,7 @@
 name = Indicia forms
 description = A node module allowing Indicia data entry forms to be created.
 core = 7.x
-version = "7.x-1.58"
+version = "7.x-1.59"
 package = "Indicia"
 configure = admin/config/iform/settings
 dependencies[] = entity
