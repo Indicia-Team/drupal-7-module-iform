@@ -377,6 +377,10 @@ function iform_ajaxproxy_proxy() {
       case "scratchpad_list":
         $model = data_entry_helper::wrap($_POST, 'scratchpad_list');
         break;
+    
+      case "comment_quick_reply_page_auth":
+        $model = data_entry_helper::wrap($_POST, 'comment_quick_reply_page_auth');
+        break;
 
       default:
         echo "{error:\"iform_ajaxproxy Error: Current defined methods are: sample, location, loc-sample, " .
