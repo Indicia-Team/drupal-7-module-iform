@@ -1311,7 +1311,7 @@ function hostsite_get_user_field($field, $default = false, $array = false, $uid 
   global $user;
   if ($field === 'uid')
     return $uid === false ? $user->uid : $uid;
-  $account = $uid !== false ? user_load($uid) : $user;
+  $account = $uid !== false ? user_load($uid) : user_load($user->uid);
   // Only load the account's language if inspecting another user, else use the UI language.
   if ($field === 'language' && isset($account->language) && $uid && $user->uid !== $uid)
     return $account->language;
