@@ -1525,6 +1525,7 @@ function hostsite_goto_page($path, $params=false, $fragment=false) {
  */
 function hostsite_access_denied() {
   drupal_access_denied();
+  exit();
 }
 
 /**
