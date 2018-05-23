@@ -1496,12 +1496,15 @@ function hostsite_get_node_field_value($nid, $field) {
   }
 }
 
-
 /**
  * Goto a page on the host site.
- * @param string $path The page path.
- * @param array $params The params to add to the URL.
- * @param string $fragment An optional named anchor to add to the URL.
+ *
+ * @param string $path
+ *   The page path.
+ * @param array $params
+ *   The params to add to the URL.
+ * @param string $fragment
+ *   An optional named anchor to add to the URL.
  */
 function hostsite_goto_page($path, $params=false, $fragment=false) {
   static $iform_redirected_to;
@@ -1515,6 +1518,13 @@ function hostsite_goto_page($path, $params=false, $fragment=false) {
       $opts['fragment']=$fragment;
     drupal_goto($path, $opts);
   }
+}
+
+/**
+ * Return from the current request with 403 access denied.
+ */
+function hostsite_access_denied() {
+  drupal_access_denied();
 }
 
 /**
