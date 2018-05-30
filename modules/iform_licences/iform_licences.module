@@ -57,20 +57,24 @@ function iform_licences_form_alter(&$form, &$form_state, $form_id) {
         $label = $licenceFor === 'records' ? t('records') : t('photos and other media');
         $thisLicenceId = $licenceFor === 'records' ? $currentLicenceId : $currentMediaLicenceId;
         $description = t('Select the licence to apply to your @label.', ['@label' => $label]) . ' ';
-        if ($thisLicenceId) {
-          $description .= t(
-            'If you change the selected licence then it will only affect @label you enter from now on.',
-            ['@label' => $licenceFor]
-          );
-        }
-        else {
-          $description .= strtoupper(
-            t('This licence will also be applied to all your previously entered records on @site.',
-            [
-              '@label' => $label,
-              '@site' => variable_get('site_name', 'this system'),
-            ]
-          ));
+
+        if ($form_id === 'user_profile_form') {
+          // Extra warning shown when changing existing setting.
+          if ($thisLicenceId) {
+            $description .= t(
+              'If you change the selected licence then it will only affect @label you enter from now on.',
+              ['@label' => $licenceFor]
+            );
+          }
+          else {
+            $description .= strtoupper(
+              t('This licence will also be applied to all your previously entered records on @site.',
+              [
+                '@label' => $label,
+                '@site' => variable_get('site_name', 'this system'),
+              ]
+            ));
+          }
         }
         $form["field_iform_licence_$licenceFor"] = array(
           '#type' => 'radios',
