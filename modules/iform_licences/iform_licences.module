@@ -116,7 +116,6 @@ function iform_licences_form_submit($form, &$form_state) {
       ];
     }
     $change = FALSE;
-    drupal_set_message(var_export($form_state['values'], true));
     if (!empty($form_state['values']['field_iform_licence_records']) &&
         $form_state['values']['field_iform_licence_records'] !== $currentUw['licence_id']) {
       $values['licence_id'] = $form_state['values']['field_iform_licence_records'];
