@@ -1,47 +1,86 @@
 <?php
 
+/**
+ * Implements hook_variable_info().
+ *
+ * Returns information about the variables used by this module, allowing an
+ * admin interface to be created. We use a single radio group to decide if we
+ * use the custom, minimised or full debug version of the OpenLayers.js file.
+ */
+function iform_licences_variable_info($options) {
+  $variable['iform_licences_mode'] = array(
+    'title' => t('Indicia licence choices'),
+    'description' => t('Option to apply user licence choice for records and/or media separately.'),
+    'type' => 'radios',
+    'options' => array(
+      'records' => t('User can select licence for records only'),
+      'media' => t('User can select licence for media (photos etc) only'),
+      'records+media' => t('User can select licence for records and media separately'),
+    ),
+    'default' => 'media',
+    'addToIndiciaSettingsPage' => TRUE,
+  );
+  return $variable;
+}
+
 function iform_licences_form_alter(&$form, &$form_state, $form_id) {
   if (($form_id === 'user_profile_form' || $form_id === 'user_register_form')) {
-    $conn = iform_get_connection_details(null);
+    $conn = iform_get_connection_details(NULL);
     $readAuth = data_entry_helper::get_read_auth($conn['website_id'], $conn['password']);
     $licences = data_entry_helper::get_population_data(array(
       'table' => 'licence',
-      'extraParams' => $readAuth
+      'extraParams' => $readAuth,
+      'caching' => FALSE,
     ));
+    $licencesApplyTo = explode('+', variable_get('iform_licences_mode', 'media'));
     if (count($licences)) {
       $indiciaUserId = hostsite_get_user_field('indicia_user_id');
-      $currentLicenceId = null;
+      $currentLicenceId = NULL;
+      $currentMediaLicenceId = NULL;
       if ($indiciaUserId) {
         $current = data_entry_helper::get_population_data(array(
           'table' => 'users_website',
           'extraParams' => $readAuth + array(
               'user_id' => $indiciaUserId,
-              'columns' => 'licence_id'
+              'columns' => 'licence_id,media_licence_id'
             ),
-          'caching' => FALSE
+          'caching' => FALSE,
         ));
         $currentLicenceId = $current[0]['licence_id'];
+        $currentMediaLicenceId = $current[0]['media_licence_id'];
       }
       $options = array();
       foreach ($licences as $licence) {
         $options[$licence['id']] = "$licence[code]: $licence[title]";
       }
-      $description = t('Select the licence to apply to your records.') . ' ';
-      if ($currentLicenceId) {
-        $description .= t('If you change the selected licence then it will only affect records you enter from now on.');
+      foreach ($licencesApplyTo as $licenceFor) {
+        $label = $licenceFor === 'records' ? t('records') : t('photos and other media');
+        $thisLicenceId = $licenceFor === 'records' ? $currentLicenceId : $currentMediaLicenceId;
+        $description = t('Select the licence to apply to your @label.', ['@label' => $label]) . ' ';
+        if ($thisLicenceId) {
+          $description .= t(
+            'If you change the selected licence then it will only affect @label you enter from now on.',
+            ['@label' => $licenceFor]
+          );
+        }
+        else {
+          $description .= strtoupper(
+            t('This licence will also be applied to all your previously entered records on @site.',
+            [
+              '@label' => $label,
+              '@site' => variable_get('site_name', 'this system'),
+            ]
+          ));
+        }
+        $form["field_iform_licence_$licenceFor"] = array(
+          '#type' => 'radios',
+          '#title' => t('Licence for your @label', ['@label' => $label]),
+          '#options' => $options,
+          '#description' => $description,
+          '#required' => TRUE,
+          '#default_value' => $thisLicenceId,
+        );
       }
-      else {
-        $description .= strtoupper(t('This licence will also be applied to all your previously entered records on @site.',
-          array('@site' => variable_get('site_name','this system'))));
-      }
-      $form['field_iform_licence'] = array(
-        '#type' => 'radios',
-        '#title' => t('Licence for your records'),
-        '#options' => $options,
-        '#description' => $description,
-        '#required' => TRUE,
-        '#default_value' => $currentLicenceId
-      );
       $form['#submit'][] = 'iform_licences_form_submit';
     }
   }
@@ -51,28 +90,54 @@ function iform_licences_form_submit($form, &$form_state) {
   $conn = iform_get_connection_details(NULL);
   $auth = data_entry_helper::get_read_write_auth($conn['website_id'], $conn['password']);
   $indiciaUserId = hostsite_get_user_field('indicia_user_id');
-  $existingUsersWebsiteId = null;
+  $existingUsersWebsiteId = NULL;
   if ($indiciaUserId) {
     $current = data_entry_helper::get_population_data(array(
       'table' => 'users_website',
       'extraParams' => $auth['read'] + array(
-          'user_id' => $indiciaUserId,
-          'columns' => 'id'
-        ),
+        'user_id' => $indiciaUserId,
+        'columns' => 'id,licence_id,media_licence_id',
+      ),
       'caching' => FALSE
     ));
-    $values = array('licence_id' => $form_state['values']['field_iform_licence']);
-    if (count($current))
-      $values['id'] = $current[0]['id'];
-    else {
-      $values['user_id'] = $indiciaUserId;
-      $values['website_id'] = variable_get('indicia_website_id', '');
+    $values = [];
+    if (count($current)) {
+      $currentUw = $current[0];
+      $values['id'] = $currentUw['id'];
     }
-    $s = data_entry_helper::build_submission($values, array('model' => 'users_website'));
-    $r = data_entry_helper::forward_post_to('users_website', $s, $auth['write_tokens']);
-    if (!isset($r['success'])) {
-      watchdog('iform', 'Error occurred when saving a user licence: '.var_export($r, true));
-      drupal_set_message(var_export($r, true), 'error');
+    else {
+      $currentUw = [
+        'licence_id' => NULL,
+        'media_licence_id' => NULL,
+      ];
+      $values = [
+        'user_id' => $indiciaUserId,
+        'website_id' => variable_get('indicia_website_id', ''),
+      ];
+    }
+    $change = FALSE;
+    drupal_set_message(var_export($form_state['values'], true));
+    if (!empty($form_state['values']['field_iform_licence_records']) &&
+        $form_state['values']['field_iform_licence_records'] !== $currentUw['licence_id']) {
+      $values['licence_id'] = $form_state['values']['field_iform_licence_records'];
+      $change = TRUE;
+    }
+    if (!empty($form_state['values']['field_iform_licence_media']) &&
+        $form_state['values']['field_iform_licence_media'] !== $currentUw['media_licence_id']) {
+      $values['media_licence_id'] = $form_state['values']['field_iform_licence_media'];
+      $change = TRUE;
+    }
+    if ($change) {
+      $s = data_entry_helper::build_submission($values, array('model' => 'users_website'));
+      $r = data_entry_helper::forward_post_to('users_website', $s, $auth['write_tokens']);
+      if (!isset($r['success'])) {
+        watchdog('iform', 'Error occurred when saving a user licence: '.var_export($r, TRUE));
+        drupal_set_message(var_export($r, TRUE), 'error');
+      }
+    }
+    else {
+      drupal_set_message('no change');
     }
   }
+
 }
