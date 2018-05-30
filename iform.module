@@ -944,8 +944,8 @@ function handle_resources() {
       if (isset($resourceList[$resource]['javascript'])) {
         foreach ($resourceList[$resource]['javascript'] as $j) {
           // if enabling fancybox, link it up
-          if (strpos($j, 'fancybox.')!==FALSE)
-            data_entry_helper::$javascript .= "jQuery('a.fancybox').fancybox();\n";
+          if (strpos($j, 'fancybox.') !== FALSE)
+            data_entry_helper::$javascript .= "$('a.fancybox').fancybox({ afterLoad: indiciaFns.afterFancyboxLoad });\n";
           // We must not add jQuery twice. So for this file, add Drupal's own version if not already done.
           if (strcasecmp(substr($j, -9), 'jQuery.js')==0) {
             // No need to load jquery.js in Drupal 7 as it loads automatically if there is any other JavaScript
@@ -999,7 +999,7 @@ function iform_get_form_resource_attachments() {
         foreach ($resourceList[$resource]['javascript'] as $j) {
           // if enabling fancybox, link it up
           if (strpos($j, 'fancybox.')!==FALSE)
-            data_entry_helper::$javascript .= "jQuery('a.fancybox').fancybox();\n";
+            data_entry_helper::$javascript .= "$('a.fancybox').fancybox({ afterLoad: indiciaFns.afterFancyboxLoad });\n";
           // We must not add jQuery twice. So for this file, add Drupal's own version if not already done.
           if (strcasecmp(substr($j, -9), 'jQuery.js')==0) {
             // No need to load jquery.js in Drupal 7 as it loads automatically if there is any other JavaScript
