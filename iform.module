@@ -1192,6 +1192,14 @@ function iform_load_helpers(array $files, $base_url='') {
       }
     }
     // interim_image_folder
+    if(!helper_base::$interim_image_folder){
+      // always create path into public files folder
+      $filePath = hostsite_get_public_file_path();
+      helper_base::$interim_image_folder = "$filePath/indicia/upload/";
+      if (!is_dir(helper_base::$interim_image_folder)) {
+        mkdir(helper_base::$interim_image_folder, 0777, true);
+      }
+    }
     // final_image_folder
     // indicia_upload_path
     // max_upload_size
