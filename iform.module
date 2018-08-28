@@ -1177,7 +1177,6 @@ function iform_load_helpers(array $files, $base_url='') {
         mkdir(helper_base::$interim_image_folder, 0777, true);
       }
     }
-    drupal_set_message(helper_base::$interim_image_folder);
     // final_image_folder
     // indicia_upload_path
     // max_upload_size
