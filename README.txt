@@ -6,9 +6,8 @@ INSTALLATION
 1. Copy the module to your site's modules folder.
 2. Give write permissions to the client_helpers/upload and client_helpers/cache
 folders.
-3. Copy _helper_config.php to helper_config.php.
-4. Enable the module.
-5. Run updates.php
+3. Enable the module.
+4. Run updates.php
 
 CONFIGURATION
 1. Go to Configuration>IForm>Settings

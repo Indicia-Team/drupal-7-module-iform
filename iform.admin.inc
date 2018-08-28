@@ -4,7 +4,7 @@
 * Include file to define the admin interface for the iform module.
 */
 
-/** 
+/**
  * A form definition for providing global configuration options for Indicia. Used both in the installation
  * profile as an install task, and provided on the admin menu.
  */
@@ -12,7 +12,7 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
   iform_load_helpers(array('map_helper', 'data_entry_helper'));
   global $_iform_warehouses;
   iform_load_warehouse_array();
-  foreach ($_iform_warehouses as $warehouse => $def) 
+  foreach ($_iform_warehouses as $warehouse => $def)
     $warehouses[$warehouse] = $def['title'];
   $warehouses['other'] = t('Other');
   $form['indicia_warehouse'] = array(
@@ -109,7 +109,7 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
         'please visit <a target="_blank" href="https://code.google.com/apis/console"> the Google APIs Console</a>.'),
     '#required' => FALSE,
     '#default_value' => variable_get('indicia_google_api_key',
-        isset(helper_config::$google_api_key) ? helper_config::$google_api_key : ''),
+        isset(helper_base::$google_api_key) ? helper_base::$google_api_key : ''),
   );
   $form['api_keys']['indicia_google_maps_api_key'] = array(
     '#type' => 'textfield',
@@ -120,7 +120,7 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
         'the Google APIs documentation.</a>.'),
     '#required' => FALSE,
     '#default_value' => variable_get('indicia_google_maps_api_key',
-        isset(helper_config::$google_maps_api_key) ? helper_config::$google_maps_api_key : ''),
+        isset(helper_base::$google_maps_api_key) ? helper_base::$google_maps_api_key : ''),
   );
   $form['api_keys']['indicia_bing_api_key'] = array(
     '#type' => 'textfield',
@@ -153,7 +153,7 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
     '#markup' => map_helper::map_panel(array(
       'width' => '100%',
       'height' => 500,
-      'presetLayers' => array('osm'), 
+      'presetLayers' => array('osm'),
       'editLayer' => FALSE,
       'layers' => array(),
       'initial_lat' => variable_get('indicia_map_centroid_lat', 55),
@@ -207,7 +207,7 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
     '#description' => t('For any system not in this list, you can enter a comma separated list of EPSG codes or other system names as long as they are ' .
         'recognised by the Indicia Warehouse you are using.')
   );
-  // Add any module declared additional iform variables to the settings form. Extra variables only 
+  // Add any module declared additional iform variables to the settings form. Extra variables only
   // visible after install, as they may need a website connection
   if ((!defined('MAINTENANCE_MODE') || MAINTENANCE_MODE != 'install')  && variable_get('indicia_website_id', false)) {
     try {
@@ -289,11 +289,11 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
     }
   }
   $form['continue'] = array(
-    '#type' => 'submit', 
+    '#type' => 'submit',
     '#value' => t('Save'),
     '#validate' => array('indicia_configuration_form_validate'),
   );
-  
+
   // Note that #action is set to the url passed through from
   // installer, ensuring that it points to the same page, and
   // #redirect is FALSE to avoid broken installer workflow.
@@ -306,7 +306,7 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
     $form['#submit'][] = 'indicia_configuration_form_submit';
   else
     $form['#submit'][] = $submit_handler;
-    
+
   // need some js to trap moving the map, and store the centre + zoom in hidden controls
   map_helper::$javascript .= "
 mapInitialisationHooks.push(function(div) {
@@ -326,10 +326,10 @@ mapInitialisationHooks.push(function(div) {
   return $form;
 }
 
-/** 
+/**
  * Implement hook_validate.
  * Checks the warehouse configuration settings are valid.
- * @param array $form 		
+ * @param array $form
  * @param array $form_state
  */
 function indicia_configuration_form_validate($form, $form_state) {
@@ -387,7 +387,7 @@ function _indicia_sref_systems_from_form($values) {
   return implode(',', $arr);
 }
 
-/** 
+/**
  * Convert the stored value for indicia_spatial_systems into values to use as defaults for controls on the form.
  * @param array $systems The list of spatial systems to map to. Any others go into the array['other'] part of the response.
  * @return array Associative array containing entries called list (an array of available systems) and other
@@ -432,7 +432,7 @@ function indicia_configuration_form_submit($form, &$form_state) {
   variable_set('indicia_map_zoom', $form_state['values']['indicia_map_zoom']);
   // Save any indicia variables declared by hook_variable_info
   global $language;
-  $vars = module_invoke_all('variable_info', array("language" => $language));  
+  $vars = module_invoke_all('variable_info', array("language" => $language));
   foreach ($vars as $var=>$config) {
     if (!empty($config['addToIndiciaSettingsPage']) && $config['addToIndiciaSettingsPage'] && isset($form_state['values'][$var]))
       variable_set($var, $form_state['values'][$var]);
@@ -451,7 +451,7 @@ function indicia_get_warehouse_urls($form_state) {
       'base_url' => $form_state['values']['indicia_base_url'],
       'geoserver_url' => $form_state['values']['indicia_geoserver_url']
     );
-  } 
+  }
   else {
     global $_iform_warehouses;
     iform_load_warehouse_array();
