@@ -3,33 +3,38 @@
 // PHP_VERSION_ID is available as of PHP 5.2.7, if our
 // version is lower than that, then emulate it
 if (!defined('PHP_VERSION_ID')) {
-    $version = explode('.', PHP_VERSION);
+  $version = explode('.', PHP_VERSION);
 
-    define('PHP_VERSION_ID', ($version[0] * 10000 + $version[1] * 100 + $version[2]));
+  define('PHP_VERSION_ID', ($version[0] * 10000 + $version[1] * 100 + $version[2]));
 }
 
 /**
-* Display help and module information
-* @param path which path of the site we're displaying help
-* @param arg array that holds the current path as would be returned from arg() function
-* @return help text for the path
-*/
+ * Display help and module information.
+ *
+ * @param string $path
+ *   Which path of the site we're displaying help.
+ * @param $arg
+ *   Array that holds the current path as would be returned from arg() function.
+ *
+ * @return
+ *   Help text for the path.
+ */
 function iform_help($path, $arg) {
-  $output = '';  //declare your output variable
+  $output = '';
   switch ($path) {
     case "admin/help#iform":
       $output = '<p>' . t("Generates Indicia powered data entry forms.") . '</p>';
       break;
   }
   return $output;
-} // function iform_help
-
+}
 
 /**
-* Implementation of hook_permission.
-* Valid permissions for this module
-* @return array An array of valid permissions for the iform module
-*/
+ * Implements hook_permission().
+ *
+ * @return array
+ *   An array of valid permissions for the iform module
+ */
 function iform_permission() {
   $retVal = array(
     'access iform' => array(
@@ -42,7 +47,7 @@ function iform_permission() {
       'title' => t('Edit own IForm web pages')
     )
   );
-  $helpersLoaded = false;
+  $helpersLoaded = FALSE;
   // Go through every IForm node.
   //   Get the particular iform, check if it has a perms method.
   //   if yes, call it and add to the return list
@@ -52,13 +57,14 @@ function iform_permission() {
       $params = json_decode($result->params, TRUE);
       if (!$helpersLoaded) {
         iform_load_helpers(array('data_entry_helper'));
-        $helpersLoaded=true;
+        $helpersLoaded = TRUE;
       }
       require_once iform_client_helpers_path() . 'prebuilt_forms/' . $result->iform . '.php';
       if (method_exists('iform_' . $result->iform, 'get_perms')) {
         $perms = call_user_func(array('iform_' . $result->iform, 'get_perms'), $result->nid, $params);
-        foreach($perms as $perm)
-          $retVal[$perm] = array('title'=>t($perm));
+        foreach ($perms as $perm) {
+          $retVal[$perm] = array('title' => t($perm));
+        }
       }
     }
   }
@@ -1168,9 +1174,8 @@ function iform_load_helpers(array $files, $base_url='') {
       }
       $indiciaConfigLoaded = TRUE;
     }
-    // interim_image_folder
     if (!isset(helper_base::$interim_image_folder)) {
-      // always create path into public files folder
+      // Always create path into public files folder.
       $filePath = hostsite_get_public_file_path();
       helper_base::$interim_image_folder = "$filePath/indicia/upload/";
       if (!is_dir(helper_base::$interim_image_folder)) {
