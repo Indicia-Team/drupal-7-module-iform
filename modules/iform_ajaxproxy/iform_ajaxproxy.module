@@ -133,7 +133,7 @@ function iform_ajaxproxy_proxy() {
     }
   }
   if ($error) {
-    echo "{error:\"iform_ajaxproxy Error: $error\"}";
+    echo "{\"error\":\"iform_ajaxproxy Error: $error\"}";
     return;
   }
   $writeTokens = array('nonce' => $nonce, 'auth_token' => sha1($nonce . ":" . $conn['password']));
@@ -383,7 +383,7 @@ function iform_ajaxproxy_proxy() {
         break;
 
       default:
-        echo "{error:\"iform_ajaxproxy Error: Current defined methods are: sample, location, loc-sample, " .
+        echo "{\"error\":\"iform_ajaxproxy Error: Current defined methods are: sample, location, loc-sample, " .
           "loc-smp-occ, smp-occ, media, occurrence, occ-comment, smp-comment, determination, notification, " .
           "user-trust, person_attribute_value, sample_attribute_value, location_attribute_value\"}";
         // @todo invoke optional method in relevant iform prebuilt form to
