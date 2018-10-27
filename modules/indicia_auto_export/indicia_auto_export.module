@@ -37,6 +37,17 @@ function indicia_auto_export_menu() {
 }
 
 /**
+ * Implements hook_permission().
+ */
+function indicia_auto_export_permission() {
+  return [
+    'administer indicia_auto_export' => [
+      'title' => t('Administer Indicia Auto Export'),
+    ],
+  ];
+}
+
+/**
  * Callback method which adds an export to the Drupal queue.
  *
  * The queue will then be processed at the next cron run.
