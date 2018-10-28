@@ -505,21 +505,27 @@ function iform_form_user_login_alter(&$form, &$form_state) {
 }
 
 /**
- * Menu callback that lets prebuilt forms expose a method called ajax_* which is then
- * available on a path iform/ajax/* for AJAX requests from the page.
- * @param type $form The filename of the form, excluding .php.
- * @param type $method The method name, excluding the ajax_ prefix.
- * @param integer $nid Node ID, used to get correct website and password. If not passed, then looks to use
- * the globally set website Id and password.
- * @return type
+ * Ajax form function callback.
+ *
+ * Menu callback that lets prebuilt forms expose a method called ajax_* which
+ * is then available on a path iform/ajax/* for AJAX requests from the page.
+ *
+ * @param string $form
+ *   The filename of the form, excluding .php.
+ * @param string $method
+ *   The method name, excluding the ajax_ prefix.
+ * @param int $nid
+ *   Node ID, used to get correct website and password and to validate
+ *   permissions.
  */
-function iform_ajax_callback($form=NULL, $method=NULL, $nid=NULL) {
-  if ($form===NULL || $method===NULL) {
+function iform_ajax_callback($form = NULL, $method = NULL, $nid = NULL) {
+  if ($form === NULL || $method === NULL || $nid === NULL) {
     return t('Incorrect AJAX call');
   }
   $class = "iform_$form";
   $method = "ajax_$method";
   require_once iform_client_helpers_path() . 'prebuilt_forms/' . $form . '.php';
+<<<<<<< HEAD
   if ($nid) {
     $node = node_load($nid);
     $website_id = $node->params['website_id'];
@@ -528,6 +534,23 @@ function iform_ajax_callback($form=NULL, $method=NULL, $nid=NULL) {
   // If node not supplied, or does not have its own website Id and password,
   // use the global drupal vars from the settings form.
   if (empty($website_id) || empty($password)) {
+=======
+  $node = node_load($nid);
+  if ($node->iform !== $form) {
+    hostsite_access_denied();
+  }
+  if ($node->params['view_access_control'] === '1') {
+    $permission = empty($node->params['permission_name']) ? "access iform $nid" : $node->params['permission_name'];
+    if (!hostsite_user_has_permission($permission)) {
+      hostsite_access_denied();
+    }
+  }
+  $website_id = $node->params['website_id'];
+  $password = $node->params['password'];
+  // If node not supplied, or does not have its own website Id and password,
+  // use the global drupal vars from the settings form.
+  if (!$website_id || !$password) {
+>>>>>>> hotfix-ajax
     $website_id = variable_get('indicia_website_id', '');
     $password = variable_get('indicia_password', '');
   }
