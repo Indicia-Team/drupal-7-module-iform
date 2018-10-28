@@ -525,16 +525,6 @@ function iform_ajax_callback($form = NULL, $method = NULL, $nid = NULL) {
   $class = "iform_$form";
   $method = "ajax_$method";
   require_once iform_client_helpers_path() . 'prebuilt_forms/' . $form . '.php';
-<<<<<<< HEAD
-  if ($nid) {
-    $node = node_load($nid);
-    $website_id = $node->params['website_id'];
-    $password = $node->params['password'];
-  }
-  // If node not supplied, or does not have its own website Id and password,
-  // use the global drupal vars from the settings form.
-  if (empty($website_id) || empty($password)) {
-=======
   $node = node_load($nid);
   if ($node->iform !== $form) {
     hostsite_access_denied();
@@ -550,7 +540,6 @@ function iform_ajax_callback($form = NULL, $method = NULL, $nid = NULL) {
   // If node not supplied, or does not have its own website Id and password,
   // use the global drupal vars from the settings form.
   if (!$website_id || !$password) {
->>>>>>> hotfix-ajax
     $website_id = variable_get('indicia_website_id', '');
     $password = variable_get('indicia_password', '');
   }
