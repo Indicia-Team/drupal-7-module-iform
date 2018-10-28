@@ -509,24 +509,28 @@ function iform_form_user_login_alter(&$form, &$form_state) {
  * @param string $method
  *   The method name, excluding the ajax_ prefix.
  * @param int $nid
- *   Node ID, used to get correct website and password. If not passed, then
- *   looks to use the globally set website Id and password.
- *
- * @return string
- *   Ajax response.
+ *   Node ID, used to get correct website and password and to validate
+ *   permissions.
  */
 function iform_ajax_callback($form = NULL, $method = NULL, $nid = NULL) {
-  if ($form === NULL || $method === NULL) {
+  if ($form === NULL || $method === NULL || $nid === NULL) {
     return t('Incorrect AJAX call');
   }
   $class = "iform_$form";
   $method = "ajax_$method";
   require_once iform_client_helpers_path() . 'prebuilt_forms/' . $form . '.php';
-  if ($nid) {
-    $node = node_load($nid);
-    $website_id = $node->params['website_id'];
-    $password = $node->params['password'];
+  $node = node_load($nid);
+  if ($node->iform !== $form) {
+    hostsite_access_denied();
   }
+  if ($node->params['view_access_control'] === '1') {
+    $permission = empty($node->params['permission_name']) ? "access iform $nid" : $node->params['permission_name'];
+    if (!hostsite_user_has_permission($permission)) {
+      hostsite_access_denied();
+    }
+  }
+  $website_id = $node->params['website_id'];
+  $password = $node->params['password'];
   // If node not supplied, or does not have its own website Id and password,
   // use the global drupal vars from the settings form.
   if (!$website_id || !$password) {
