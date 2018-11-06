@@ -680,21 +680,24 @@ function iform_view($node, $view_mode) {
     if (user_access('edit iform')) {
       $msg = l(t('Please review your Indicia forms'), 'admin/build/features/indicia');
     }
-    else
+    else {
       $msg = t('Please contact the site administrator.');
+    }
     $r = t('This form has been added by enabling an Indicia Feature but its configuration needs to be reviewed before use.') .
         ' ' . $msg;
     $node->content['iform'] = array(
       '#markup' => $r,
-      '#weight' => 1
+      '#weight' => 1,
     );
     return $node;
   }
   global $language;
-  $helperPath=realpath(iform_client_helpers_path());
-  // preferred location for custom node configuration files now under Drupal files folder
+  $helperPath = realpath(iform_client_helpers_path());
+  // Preferred location for custom node configuration files now under Drupal
+  // files folder.
   $filePath = variable_get('file_public_path', conf_path() . '/files');
-  if (isset($node->iform) && $node->iform!=-1) {
+  if (isset($node->iform) && $node->iform != -1) {
+    data_entry_helper::$javascript .= "indiciaData.nid = $node->nid;\n";
     _iform_load_language_files($node);
     _iform_load_template_files($helperPath, $filePath, $node);
     $args = array('language' => $language->language);
@@ -702,19 +705,22 @@ function iform_view($node, $view_mode) {
     ob_start();
     $connection = iform_get_connection_details($node);
     $args['base_url'] = $connection['base_url'];
-    $args['website_id']=$connection['website_id'];
-    $args['password']=$connection['password'];
-    $args['available_for_groups']=$node->available_for_groups;
-    $args['limit_to_group_id']=$node->limit_to_group_id;
-    // we need to grab each requested parameter from the node to pass to the form
+    $args['website_id'] = $connection['website_id'];
+    $args['password'] = $connection['password'];
+    $args['available_for_groups'] = $node->available_for_groups;
+    $args['limit_to_group_id'] = $node->limit_to_group_id;
+    // We need to grab each requested parameter from the node to pass to the
+    // form.
     $params = form_helper::get_form_parameters($node->iform);
 
     foreach ($params as $param) {
       if (isset($node->params[$param['fieldname']]))
         $args[$param['fieldname']] = $node->params[$param['fieldname']];
-      elseif (isset($param['default']))
-        // apply the default, this was an old saved form configuration which doesn't have a new parameter.
+      elseif (isset($param['default'])) {
+        // Apply the default, this was an old saved form configuration which
+        // doesn't have a new parameter.
         $args[$param['fieldname']] = $param['default'];
+      }
     }
     $r = '';
     $response = NULL;
@@ -725,14 +731,17 @@ function iform_view($node, $view_mode) {
     }
     if ($_POST && (array_key_exists('website_id', $_POST)) && method_exists('iform_' . $node->iform, 'get_submission')) {
       if (!empty($_POST['delete-button'])) {
-        $_POST['deleted']='t';
+        $_POST['deleted'] = 't';
         $msg = lang::get('The record has been deleted.');
-      } else
+      }
+      else {
         $msg = lang::get('Thank you. Your records have been saved to the database.');
+      }
       // Ask the form to submit itself.
       try {
         // attach the path to the input form. It'll just get skipped if we are not posting a sample.
-        $_POST['sample:input_form'] = drupal_lookup_path('alias',"node/".$node->nid) ? drupal_lookup_path('alias',"node/".$node->nid) : 'node/'.$node->nid;
+        $_POST['sample:input_form'] = drupal_lookup_path('alias', "node/$node->nid")
+          ? drupal_lookup_path('alias', "node/$node->nid") : "node/$node->nid";
         $s = call_user_func(array('iform_' . $node->iform, 'get_submission'), $_POST, $args, $node->nid);
       } catch (Exception $e) {
         watchdog('iform', 'Exception occurred during build of form submission: ' . $e->getMessage());
