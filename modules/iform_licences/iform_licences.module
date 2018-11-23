@@ -134,7 +134,7 @@ function iform_licences_form_submit($form, &$form_state) {
       $s = data_entry_helper::build_submission($values, array('model' => 'users_website'));
       $r = data_entry_helper::forward_post_to('users_website', $s, $auth['write_tokens']);
       if (!isset($r['success'])) {
-        watchdog('iform', 'Error occurred when saving a user licence: '.var_export($r, TRUE));
+        watchdog('iform', 'Error occurred when saving a user licence: ' . var_export($r, TRUE));
         drupal_set_message(var_export($r, TRUE), 'error');
       }
     }
