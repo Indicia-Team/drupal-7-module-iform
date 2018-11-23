@@ -1,5 +1,5 @@
 <?php
 
 function iform_licences_uninstall() {
-  variable_del('indicia_licence');
+  variable_del('iform_licences_mode');
 }
