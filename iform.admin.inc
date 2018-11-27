@@ -4,7 +4,7 @@
 * Include file to define the admin interface for the iform module.
 */
 
-/** 
+/**
  * A form definition for providing global configuration options for Indicia. Used both in the installation
  * profile as an install task, and provided on the admin menu.
  */
@@ -12,7 +12,7 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
   iform_load_helpers(array('map_helper', 'data_entry_helper'));
   global $_iform_warehouses;
   iform_load_warehouse_array();
-  foreach ($_iform_warehouses as $warehouse => $def) 
+  foreach ($_iform_warehouses as $warehouse => $def)
     $warehouses[$warehouse] = $def['title'];
   $warehouses['other'] = t('Other');
   $form['indicia_warehouse'] = array(
@@ -153,7 +153,7 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
     '#markup' => map_helper::map_panel(array(
       'width' => '100%',
       'height' => 500,
-      'presetLayers' => array('osm'), 
+      'presetLayers' => array('osm'),
       'editLayer' => FALSE,
       'layers' => array(),
       'initial_lat' => variable_get('indicia_map_centroid_lat', 55),
@@ -207,7 +207,7 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
     '#description' => t('For any system not in this list, you can enter a comma separated list of EPSG codes or other system names as long as they are ' .
         'recognised by the Indicia Warehouse you are using.')
   );
-  // Add any module declared additional iform variables to the settings form. Extra variables only 
+  // Add any module declared additional iform variables to the settings form. Extra variables only
   // visible after install, as they may need a website connection
   if ((!defined('MAINTENANCE_MODE') || MAINTENANCE_MODE != 'install')  && variable_get('indicia_website_id', false)) {
     try {
@@ -219,32 +219,34 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
       foreach ($vars as $var => $config) {
         $matches = array();
         if (isset($config['addToIndiciaSettingsPage']) && $config['addToIndiciaSettingsPage']) {
+          $defaultType = 'textfield';
+          // Force textfields to a select if picking from a data list.
           if (isset($config['subtype']) && preg_match('/^termlists_term:(?P<list>.+)/', $config['subtype'], $matches)) {
-            $type = 'select';
+            $defaultType = 'select';
           }
           elseif (isset($config['subtype']) && preg_match('/^(?P<table>[a-z_]+)\.(?P<caption>[a-z_]+)/', $config['subtype'], $matches)) {
-            $type = 'select';
+            $defaultType = 'select';
           }
-          else {
-            $type = ($config['type'] == 'radios' ? 'radios' : 'textfield');
-          }
+          $type = in_array($config['type'], ['radios', 'checkboxes', 'select']) ? $config['type'] : $defaultType;
+          $nullValue = $type === 'checkboxes' ? [] : '';
           $ctrls[$var] = array(
             '#type' => $type,
             '#title' => $config['title'],
             '#description' => $config['description'],
-            '#default_value' => variable_get($var, isset($config['default']) ? $config['default'] : '')
+            '#default_value' => variable_get($var, isset($config['default']) ? $config['default'] : $nullValue),
           );
           if (isset($config['options'])) {
             $ctrls[$var]['#options'] = $config['options'];
           }
           try {
-            // output buffer used to catch and discard errors as we'll handle them ourselves and don't want them on screen.
+            // Output buffer used to catch and discard errors as we'll handle
+            // them ourselves and don't want them on screen.
             ob_start();
             if (isset($matches['list']) || isset($matches['table'])) {
               if (isset($matches['list'])) {
                 $rows = data_entry_helper::get_population_data(array(
                   'table' => 'termlists_term',
-                  'extraParams' => $readAuth + array('termlist_external_key' => 'indicia:' . $matches['list'])
+                  'extraParams' => $readAuth + array('termlist_external_key' => 'indicia:' . $matches['list']),
                 ));
                 $captionField = 'term';
               }
@@ -252,20 +254,23 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
                 $rows = data_entry_helper::get_population_data(array(
                   'table' => $matches['table'],
                   'extraParams' => $readAuth,
-                  'columns' => 'id,' . $matches['caption']
+                  'columns' => 'id,' . $matches['caption'],
                 ));
                 $captionField = $matches['caption'];
               }
-              $options = array('' => t('<please select>'));
+              // Select controls have a blank please select choice.
+              $options = ($type === 'select') ? ['' => t('<please select>')] : [];
               foreach ($rows as $row) {
-                if (!isset($row['id']))
-                  drupal_set_message('Dodgy: ' . var_export($row, true));
+                if (!isset($row['id'])) {
+                  drupal_set_message('Dodgy: ' . var_export($row, TRUE));
+                }
                 $options[$row['id']] = $row[$captionField];
               }
               $ctrls[$var]['#options'] = $options;
             }
             ob_end_clean();
-          } catch (Exception $e) {
+          }
+          catch (Exception $e) {
             ob_end_clean();
             watchdog('iform', 'Error loading iform settings for ' . $config['title'] . ': ' . $e->getMessage());
             drupal_set_message("Unable to load the control $config[title], probably because the warehouse connection is not correctly configured. ");
@@ -289,11 +294,11 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
     }
   }
   $form['continue'] = array(
-    '#type' => 'submit', 
+    '#type' => 'submit',
     '#value' => t('Save'),
     '#validate' => array('indicia_configuration_form_validate'),
   );
-  
+
   // Note that #action is set to the url passed through from
   // installer, ensuring that it points to the same page, and
   // #redirect is FALSE to avoid broken installer workflow.
@@ -306,7 +311,7 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
     $form['#submit'][] = 'indicia_configuration_form_submit';
   else
     $form['#submit'][] = $submit_handler;
-    
+
   // need some js to trap moving the map, and store the centre + zoom in hidden controls
   map_helper::$javascript .= "
 mapInitialisationHooks.push(function(div) {
@@ -326,10 +331,10 @@ mapInitialisationHooks.push(function(div) {
   return $form;
 }
 
-/** 
+/**
  * Implement hook_validate.
  * Checks the warehouse configuration settings are valid.
- * @param array $form 		
+ * @param array $form
  * @param array $form_state
  */
 function indicia_configuration_form_validate($form, $form_state) {
@@ -387,7 +392,7 @@ function _indicia_sref_systems_from_form($values) {
   return implode(',', $arr);
 }
 
-/** 
+/**
  * Convert the stored value for indicia_spatial_systems into values to use as defaults for controls on the form.
  * @param array $systems The list of spatial systems to map to. Any others go into the array['other'] part of the response.
  * @return array Associative array containing entries called list (an array of available systems) and other
@@ -432,7 +437,7 @@ function indicia_configuration_form_submit($form, &$form_state) {
   variable_set('indicia_map_zoom', $form_state['values']['indicia_map_zoom']);
   // Save any indicia variables declared by hook_variable_info
   global $language;
-  $vars = module_invoke_all('variable_info', array("language" => $language));  
+  $vars = module_invoke_all('variable_info', array("language" => $language));
   foreach ($vars as $var=>$config) {
     if (!empty($config['addToIndiciaSettingsPage']) && $config['addToIndiciaSettingsPage'] && isset($form_state['values'][$var]))
       variable_set($var, $form_state['values'][$var]);
@@ -451,7 +456,7 @@ function indicia_get_warehouse_urls($form_state) {
       'base_url' => $form_state['values']['indicia_base_url'],
       'geoserver_url' => $form_state['values']['indicia_geoserver_url']
     );
-  } 
+  }
   else {
     global $_iform_warehouses;
     iform_load_warehouse_array();
