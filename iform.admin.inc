@@ -219,32 +219,34 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
       foreach ($vars as $var => $config) {
         $matches = array();
         if (isset($config['addToIndiciaSettingsPage']) && $config['addToIndiciaSettingsPage']) {
+          $defaultType = 'textfield';
+          // Force textfields to a select if picking from a data list.
           if (isset($config['subtype']) && preg_match('/^termlists_term:(?P<list>.+)/', $config['subtype'], $matches)) {
-            $type = 'select';
+            $defaultType = 'select';
           }
           elseif (isset($config['subtype']) && preg_match('/^(?P<table>[a-z_]+)\.(?P<caption>[a-z_]+)/', $config['subtype'], $matches)) {
-            $type = 'select';
+            $defaultType = 'select';
           }
-          else {
-            $type = ($config['type'] == 'radios' ? 'radios' : 'textfield');
-          }
+          $type = in_array($config['type'], ['radios', 'checkboxes', 'select']) ? $config['type'] : $defaultType;
+          $nullValue = $type === 'checkboxes' ? [] : '';
           $ctrls[$var] = array(
             '#type' => $type,
             '#title' => $config['title'],
             '#description' => $config['description'],
-            '#default_value' => variable_get($var, isset($config['default']) ? $config['default'] : '')
+            '#default_value' => variable_get($var, isset($config['default']) ? $config['default'] : $nullValue),
           );
           if (isset($config['options'])) {
             $ctrls[$var]['#options'] = $config['options'];
           }
           try {
-            // output buffer used to catch and discard errors as we'll handle them ourselves and don't want them on screen.
+            // Output buffer used to catch and discard errors as we'll handle
+            // them ourselves and don't want them on screen.
             ob_start();
             if (isset($matches['list']) || isset($matches['table'])) {
               if (isset($matches['list'])) {
                 $rows = data_entry_helper::get_population_data(array(
                   'table' => 'termlists_term',
-                  'extraParams' => $readAuth + array('termlist_external_key' => 'indicia:' . $matches['list'])
+                  'extraParams' => $readAuth + array('termlist_external_key' => 'indicia:' . $matches['list']),
                 ));
                 $captionField = 'term';
               }
@@ -252,20 +254,23 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
                 $rows = data_entry_helper::get_population_data(array(
                   'table' => $matches['table'],
                   'extraParams' => $readAuth,
-                  'columns' => 'id,' . $matches['caption']
+                  'columns' => 'id,' . $matches['caption'],
                 ));
                 $captionField = $matches['caption'];
               }
-              $options = array('' => t('<please select>'));
+              // Select controls have a blank please select choice.
+              $options = ($type === 'select') ? ['' => t('<please select>')] : [];
               foreach ($rows as $row) {
-                if (!isset($row['id']))
-                  drupal_set_message('Dodgy: ' . var_export($row, true));
+                if (!isset($row['id'])) {
+                  drupal_set_message('Dodgy: ' . var_export($row, TRUE));
+                }
                 $options[$row['id']] = $row[$captionField];
               }
               $ctrls[$var]['#options'] = $options;
             }
             ob_end_clean();
-          } catch (Exception $e) {
+          }
+          catch (Exception $e) {
             ob_end_clean();
             watchdog('iform', 'Error loading iform settings for ' . $config['title'] . ': ' . $e->getMessage());
             drupal_set_message("Unable to load the control $config[title], probably because the warehouse connection is not correctly configured. ");
