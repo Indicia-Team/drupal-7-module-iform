@@ -270,7 +270,6 @@ function indicia_auto_export_cron() {
     $nids = array_keys($result['node']);
     $exports = entity_load('node', $nids);
     foreach ($exports as $exportNode) {
-      echo 'Add to queue ' . $exportNode->title . '<br/>';
       $q = DrupalQueue::get('indicia_auto_export');
       $exportNodeWrapper = entity_metadata_wrapper('node', $exportNode);
       $exportNodeWrapper->field_indicia_ae_status->set('queued');

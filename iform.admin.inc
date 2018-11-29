@@ -109,7 +109,7 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
         'please visit <a target="_blank" href="https://code.google.com/apis/console"> the Google APIs Console</a>.'),
     '#required' => FALSE,
     '#default_value' => variable_get('indicia_google_api_key',
-        isset(helper_config::$google_api_key) ? helper_config::$google_api_key : ''),
+        isset(helper_base::$google_api_key) ? helper_base::$google_api_key : ''),
   );
   $form['api_keys']['indicia_google_maps_api_key'] = array(
     '#type' => 'textfield',
@@ -120,7 +120,7 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
         'the Google APIs documentation.</a>.'),
     '#required' => FALSE,
     '#default_value' => variable_get('indicia_google_maps_api_key',
-        isset(helper_config::$google_maps_api_key) ? helper_config::$google_maps_api_key : ''),
+        isset(helper_base::$google_maps_api_key) ? helper_base::$google_maps_api_key : ''),
   );
   $form['api_keys']['indicia_bing_api_key'] = array(
     '#type' => 'textfield',
