@@ -409,14 +409,14 @@ function iform_menu() {
     'access arguments' => array('access administration pages'),
     'file' => 'system.admin.inc',
     'file path' => drupal_get_path('module', 'system'),
-    'position' => 'right'
+    'position' => 'right',
   );
   $items['admin/config/iform/settings'] = array(
     'title' => 'Settings',
     'description' => 'Settings page for the IForm module.',
     'page callback' => 'iform_settings',
     'access arguments' => array('create iform'),
-    'weight' => 0
+    'weight' => 0,
   );
   // Create a tab to display the admin panel.
   $items['admin/config/iform/admin'] = array(
@@ -424,7 +424,7 @@ function iform_menu() {
     'description' => 'Administration tasks for the IForm module.',
     'page callback' => 'iform_admin_tasks',
     'access arguments' => array('create iform'),
-    'weight' => 1
+    'weight' => 1,
   );
   // Create a tab to display the diagnostics panel.
   $items['admin/config/iform/diagnostics'] = array(
@@ -432,7 +432,7 @@ function iform_menu() {
     'description' => 'Run a configuration check for the IForm module.',
     'page callback' => 'iform_diagnostics',
     'access arguments' => array('create iform'),
-    'weight' => 2
+    'weight' => 2,
   );
   $items['admin/structure/features/indicia'] = array(
     'title' => 'Review IForm Features',
@@ -440,16 +440,16 @@ function iform_menu() {
         'site specific settings for the forms.',
     'page callback' => 'iform_features_review',
     'access arguments' => array('create iform'),
-    'weight' => 1
+    'weight' => 1,
   );
-  // declare a callback for ajax requests, that any prebuilt form can hook into to provide
-  // it's own AJAX handlers.
+  // Declare a callback for ajax requests, that any prebuilt form can hook into
+  // to provide it's own AJAX handlers.
   $items['iform/ajax'] = array(
     'page callback' => 'iform_ajax_callback',
     'access arguments' => array('access iform'),
-    'type' => MENU_CALLBACK
+    'type' => MENU_CALLBACK,
   );
-  // declare a registration path for public groups/activities
+  // Declare a registration path for public groups/activities.
   $items['join'] = array(
     'file' => 'iform.groups.inc',
     'page callback' => 'iform_join_group',
@@ -457,7 +457,6 @@ function iform_menu() {
   );
   return $items;
 }
-
 
 /**
  * Implement hook_form_user_login_alter.
@@ -960,7 +959,8 @@ function handle_resources() {
       if (isset($resourceList[$resource]['stylesheets'])) {
         foreach ($resourceList[$resource]['stylesheets'] as $s) {
           $s = preg_replace('/^' . str_replace('/', '\/', base_path()) . '/', '', $s);
-          drupal_add_css($s);
+          $type = preg_match('/^http/', $s) ? 'external' : 'file';
+          drupal_add_css($s, ['type' => $type]);
         }
       }
       if (isset($resourceList[$resource]['javascript'])) {

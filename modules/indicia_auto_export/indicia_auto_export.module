@@ -263,11 +263,13 @@ function indicia_auto_export_cron() {
     ->propertyCondition('type', 'indicia_auto_export')
     ->fieldCondition('field_indicia_ae_due_date', 'value', 'NULL', '!=')
     ->fieldCondition('field_indicia_ae_due_date', 'value', format_date(strtotime('now'), 'custom', 'Y-m-d H:i:s', 'UTC'), '<')
+    ->fieldCondition('field_indicia_ae_status', 'value', 'queued', '!=')
     ->fieldOrderBy('field_indicia_ae_due_date', 'value', 'DESC')
     ->range(0, 5);
   $result = $query->execute();
   if (isset($result['node'])) {
     $nids = array_keys($result['node']);
+    watchdog('indicia_auto_export', 'Queueing nodes @nodes', ['@nodes' => json_encode($nids)]);
     $exports = entity_load('node', $nids);
     foreach ($exports as $exportNode) {
       $q = DrupalQueue::get('indicia_auto_export');
@@ -299,9 +301,9 @@ function indicia_auto_export_cron_queue_info() {
  *   Node EntityQueryWrapper object for the export to process.
  */
 function indicia_auto_export_run_export($exportNodeWrapper) {
+  watchdog('indicia_auto_export', 'Processing @title', ['@title' => $exportNodeWrapper->title->value()]);
   $exportNodeWrapper->field_indicia_ae_status->set('processing');
   $exportNodeWrapper->save();
-  echo 'Processing ' . $exportNodeWrapper->title->value() . '<br/>';
   try {
     iform_load_helpers(['data_entry_helper']);
     $readAuth = data_entry_helper::get_read_auth(variable_get('indicia_website_id'), variable_get('indicia_password'));
@@ -339,7 +341,6 @@ function indicia_auto_export_run_export($exportNodeWrapper) {
     );
   }
   catch (Exception $e) {
-    echo 'Error: ' . $e->getMessage() . '<br/>';
     watchdog(
       'indicia_auto_export',
       'Export failed for @title. Error was @error.',
@@ -348,9 +349,8 @@ function indicia_auto_export_run_export($exportNodeWrapper) {
     );
     $exportNodeWrapper->field_indicia_ae_status->set('error');
   }
-
   $exportNodeWrapper->save();
-  echo 'Finished ' . $exportNodeWrapper->title->value() . '<br/>';
+  watchdog('indicia_auto_export', 'Finished @title', ['@title' => $exportNodeWrapper->title->value()]);
 }
 
 /**
@@ -395,7 +395,8 @@ function indicia_auto_export_get_filter_params($filter, $readAuth) {
  *
  * @param object $exportNodeWrapper
  *   Node entity wrapper for the export definition.
- * @param string $url Web service URL to request the download from.
+ * @param string $url
+ *   eb service URL to request the download from.
  */
 function indicia_auto_export_process_download($exportNodeWrapper, $url) {
   $fileName = empty($exportNodeWrapper->field_indicia_ae_dataset_name->value())
@@ -406,7 +407,7 @@ function indicia_auto_export_process_download($exportNodeWrapper, $url) {
   $destType = empty(drupal_realpath('private://')) ? 'public' : 'private';
   $filePath = drupal_realpath("$destType://") . "/indicia/exports";
   if (!file_exists($filePath)) {
-    echo "Dir $filePath does not exist so attempting to create it.<br/>";
+    watchdog('indicia_auto_export', "Directory @path does not exist so attempting to create it.", ['@path' => $filePath]);
     if (!mkdir($filePath, 0744, TRUE)) {
       throw new exception(
         'No permission to create directory $filePath. Please create the directory manually.'
