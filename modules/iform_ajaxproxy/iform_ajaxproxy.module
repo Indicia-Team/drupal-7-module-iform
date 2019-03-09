@@ -140,6 +140,9 @@ function iform_ajaxproxy_proxy() {
   if ($index === 'single_verify') {
     iform_ajaxproxy_single_verify($writeTokens);
   }
+  elseif ($index === 'list_verify') {
+    iform_ajaxproxy_single_verify($writeTokens, 'list_verify');
+  }
   elseif ($index === 'single_verify_sample') {
     iform_ajaxproxy_single_verify($writeTokens, 'single_verify_sample');
   }
@@ -411,7 +414,7 @@ function iform_ajaxproxy_proxy() {
 /**
  * Special case handler for the single_verify method.
  *
- * Tthis goes to the data_utils service for performance reasons.
+ * This goes to the data_utils service for performance reasons.
  */
 function iform_ajaxproxy_single_verify($writeTokens, $method = 'single_verify') {
   $request = data_entry_helper::$base_url . "index.php/services/data_utils/$method";
