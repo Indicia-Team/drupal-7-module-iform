@@ -24,17 +24,19 @@ function iform_user_ui_options_form_user_profile_form_alter(&$form) {
       if (!isset($optionset['title']) || !isset($optionset['choices'])) {
         throw new exception('Incorrect structure for $file. Missing title or choices.');
       }
-      $radioOptions = array('default' => 'Use the default settings for each page');
-      foreach ($optionset['choices'] as $choiceName => $choiceSettings) {
-        $radioOptions[$choiceName] = t($choiceSettings['title']) .
-            '<br/><div class="description">' . t($choiceSettings['description']) . '</div>';
-      }
-      $form['Preferences']['ui_options']["iform_user_ui_$name"] = array(
-        '#type' => 'radios',
-        '#title' => check_plain(t($optionset['title'])),
-        '#options' => $radioOptions,
-        '#default_value' => !empty($currentOpts[$name]) ? $currentOpts[$name] : 'default'
-      );
+      if (count($optionset['choices']) > 1) {
+        $radioOptions = array('default' => 'Use the default settings for each page');
+        foreach ($optionset['choices'] as $choiceName => $choiceSettings) {
+          $radioOptions[$choiceName] = t($choiceSettings['title']) .
+              '<br/><div class="description">' . t($choiceSettings['description']) . '</div>';
+        }
+        $form['Preferences']['ui_options']["iform_user_ui_$name"] = array(
+          '#type' => 'radios',
+          '#title' => check_plain(t($optionset['title'])),
+          '#options' => $radioOptions,
+          '#default_value' => !empty($currentOpts[$name]) ? $currentOpts[$name] : 'default'
+        );
+      } 
     }
   }
   // Hide warehouse link and remembered field mappings unless admin.
@@ -129,6 +131,13 @@ function iform_user_ui_options_preprocess_iform(array &$params) {
           if (strpos($param, '|') === FALSE) {
             // An iform parameter override.
             $paramsToApply[$param] = $value;
+            if ($param == "preset_layers") {
+              //If preset_layers is set at this point, then it has been set in 
+              //a JSON config file to override the layers available on all forms.
+              //Here we set a JS variable so that the map selection div can be removed
+              //from forms (where appropriate)
+              drupal_add_js(array('iform_user_ui_options' => array('basemap_layers_override' => TRUE)), array('type' => 'setting'));
+            }
           }
           else {
             // Aform structure control property override. Store it for later, will be used by dynamic.php in
