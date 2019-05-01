@@ -449,6 +449,12 @@ function iform_menu() {
     'access arguments' => array('access iform'),
     'type' => MENU_CALLBACK,
   );
+  // Declare a callback for ajax Elasticsearch proxy requests.
+  $items['iform/esproxy'] = array(
+    'page callback' => 'iform_esproxy_callback',
+    'access arguments' => array('access iform'),
+    'type' => MENU_CALLBACK,
+  );
   // Declare a registration path for public groups/activities.
   $items['join'] = array(
     'file' => 'iform.groups.inc',
@@ -543,6 +549,16 @@ function iform_ajax_callback($form = NULL, $method = NULL, $nid = NULL) {
     $password = variable_get('indicia_password', '');
   }
   call_user_func(array($class, $method), $website_id, $password, $nid);
+}
+
+function iform_esproxy_callback($method, $nid = NULL) {
+  require_once 'client_helpers/ElasticsearchProxyHelper.php';
+  try {
+    ElasticSearchProxyHelper::callMethod($method, $nid);
+  }
+  catch (ElasticSearchProxyAbort $e) {
+    // Nothing to do.
+  }
 }
 
 /**
@@ -1641,6 +1657,58 @@ function hostsite_module_exists($module) {
  */
 function hostsite_mime_header_encode($string) {
   return mime_header_encode($string);
+}
+
+/**
+ * Returns the config options required to drive Elasticsearch driven content.
+ *
+ * @param integer $nid
+ *   Optional ID of node which may override site-wide Elasticsearch settings.
+ *
+ * @return array
+ *   Settings structure.
+ */
+function hostsite_get_es_config($nid) {
+  $paramNames = [
+    'endpoint',
+    'user',
+    'secret',
+    'warehouse_prefix',
+    'all_records_permission',
+    'my_records_permission',
+    'location_collation_records_permission'
+  ];
+  $esParams = [];
+  if ($nid) {
+    $nodeParams = hostsite_get_node_field_value($nid, 'params');
+  }
+  foreach ($paramNames as $name) {
+    $esParams[$name] = variable_get("indicia_elasticsearch_$name");
+    // Allow page level override.
+    if ($nid) {
+      $esParams[$name] = !empty($nodeParams[$name])
+        ? $nodeParams[$name]
+        : $esParams[$name];
+    }
+  }
+  // Also grab some Indicia connection data.
+  $paramNames = [
+    'website_id',
+    'password',
+    'base_url',
+  ];
+  $indiciaParams = [];
+  foreach ($paramNames as $name) {
+    $indiciaParams[$name] = variable_get("indicia_$name", '');
+    // Allow page level override.
+    if ($nid && empty($indiciaParams[$name]) || variable_get('indicia_allow_connection_override', FALSE)) {
+      $indiciaParams[$name] = isset($nodeParams[$name]) ? $nodeParams[$name] : $indiciaParams[$name];
+    }
+  }
+  return [
+    'es' => $esParams,
+    'indicia' => $indiciaParams,
+  ];
 }
 
 /**
