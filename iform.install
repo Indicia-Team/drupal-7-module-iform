@@ -1,4 +1,4 @@
-<?php 
+<?php
 /**
 * @file
 * Install, update, and uninstall functions for the iform module.
@@ -27,7 +27,7 @@ function iform_schema() {
       ),
       'params' => array(
         'description' => 'JSON structure containing parameters passed to the form on instantiation.',
-        'type' => 'text',        
+        'type' => 'text',
         'not null' => TRUE,
       ),
       'needs_review' => array(
@@ -61,7 +61,7 @@ function iform_install() {
   // don't promote iforms to front page by default
   variable_set('node_options_iform', array('status'));
   // hide author and date info
-  variable_set('node_submitted_iform', FALSE); 
+  variable_set('node_submitted_iform', FALSE);
   // and default to no comments
   variable_set('comment_iform', (module_exists('comment') ? COMMENT_NODE_HIDDEN : 0));
   // Don't display date and author information for page nodes by default.
@@ -80,6 +80,13 @@ function iform_uninstall() {
   variable_del('indicia_base_url');
   variable_del('indicia_geoserver_url');
   variable_del('indicia_max_warehouse_url_length');
+  variable_del('indicia_elasticsearch_endpoint');
+  variable_del('indicia_elasticsearch_user');
+  variable_del('indicia_elasticsearch_secret');
+  variable_del('indicia_elasticsearch_warehouse_prefix');
+  variable_del('indicia_elasticsearch_all_records_permission');
+  variable_del('indicia_elasticsearch_my_records_permission');
+  variable_del('indicia_elasticsearch_location_collation_records_permission');
   variable_del('indicia_google_api_key');
   variable_del('indicia_google_maps_api_key');
   variable_del('indicia_bing_api_key');
