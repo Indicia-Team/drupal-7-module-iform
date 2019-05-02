@@ -554,9 +554,9 @@ function iform_ajax_callback($form = NULL, $method = NULL, $nid = NULL) {
 function iform_esproxy_callback($method, $nid = NULL) {
   require_once 'client_helpers/ElasticsearchProxyHelper.php';
   try {
-    ElasticSearchProxyHelper::callMethod($method, $nid);
+    ElasticsearchProxyHelper::callMethod($method, $nid);
   }
-  catch (ElasticSearchProxyAbort $e) {
+  catch (ElasticsearchProxyAbort $e) {
     // Nothing to do.
   }
 }
