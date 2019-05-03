@@ -96,6 +96,83 @@ function iform_configuration_form($form, &$form_state, $url='', $submit_handler=
     '#description' => check_plain($pwd_description),
     '#required' => $pwd_required,
   );
+  $form['esproxy'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Elasticsearch configuration')
+  );
+  $instruct = <<<TXT
+You can configure a default connection for reporting in Elasticsearch here. This will typically be for open access
+reporting data available across your site rather than a connection for specific tasks such as verification. This
+connection will be used by any blocks that use the indicia.datacomponents library to link to Elasticsearch. IForm pages
+that link to Elasticsearch may have their own connection details. See the <a
+href="https://indicia-docs.readthedocs.io/en/latest/developing/rest-web-services/elasticsearch.html">
+Indicia Elasticsearch documentation</a> for more info.
+TXT;
+  $form['esproxy']['instructions'] = [
+    '#markup' => '<p>' . t($instruct) . '</p>'
+  ];
+  $form['esproxy']['elasticsearch_endpoint'] = [
+    '#type' => 'textfield',
+    '#title' => t('Elasticsearch endpoint'),
+    '#description' => t('Elasticsearch endpoint declared in the REST API.'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('indicia_elasticsearch_endpoint',
+        isset(helper_base::$indicia_elasticsearch_endpoint) ? helper_base::$indicia_elasticsearch_endpoint : ''),
+  ];
+  $form['esproxy']['elasticsearch_user'] = [
+    '#type' => 'textfield',
+    '#title' => t('Elasticsearch user'),
+    '#description' => t('REST API user with Elasticsearch access.'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('indicia_elasticsearch_user',
+        isset(helper_base::$elasticsearch_user) ? helper_base::$elasticsearch_user : ''),
+  ];
+  $form['esproxy']['elasticsearch_secret'] = [
+    '#type' => 'textfield',
+    '#title' => t('Elasticsearch secret'),
+    '#description' => t('REST API user secret.'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('indicia_elasticsearch_secret',
+        isset(helper_base::$elasticsearch_secret) ? helper_base::$elasticsearch_secret : ''),
+  ];
+  $form['esproxy']['elasticsearch_warehouse_prefix'] = [
+    '#type' => 'textfield',
+    '#title' => t('Warehouse prefix'),
+    '#description' => t('Prefix given to Indicia IDs on this Elasticsearch index to form a unique document _id. ' .
+      'Required if this connection will allow any update operations (e.g. for verification status changes), or can ' .
+      'be provided as a setting on each individual page that allows updates.'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('elasticsearch_warehouse_prefix',
+        isset(helper_base::$elasticsearch_warehouse_prefix) ? helper_base::$elasticsearch_warehouse_prefix : ''),
+  ];
+  $form['esproxy']['elasticsearch_all_records_permission'] = [
+    '#type' => 'textfield',
+    '#title' => 'Elasticsearch all records permission',
+    '#description' => t('Permission required to access all records via this connection. If the connection only provides ' .
+      'access to publically visible data then leave as "access iform"'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('indicia_elasticsearch_all_records_permission',
+        isset(helper_base::$elasticsearch_all_records_permission) ? helper_base::$elasticsearch_all_records_permission : 'access iform'),
+  ];
+  $form['esproxy']['elasticsearch_my_records_permission'] = [
+    '#type' => 'textfield',
+    '#title' => 'Elasticsearch my records permission',
+    '#description' => t('Permission required to access a user\'s own records via this connection. Normally safe to ' .
+      'leave as "access iform"'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('indicia_elasticsearch_my_records_permission',
+        isset(helper_base::$elasticsearch_my_records_permission) ? helper_base::$elasticsearch_my_records_permission : 'access iform'),
+  ];
+  $form['esproxy']['elasticsearch_location_collation_records_permission'] = [
+    '#type' => 'textfield',
+    '#title' => 'Elasticsearch location collaction records permission',
+    '#description' => t('Permission required to access records in a collation area (e.g. Local Record Centre ' .
+      'boundary) via this connection. If the connection only provides access to publically visible data then leave ' .
+      'as "access iform"'),
+    '#required' => FALSE,
+    '#default_value' => variable_get('indicia_elasticsearch_location_collation_records_permission',
+        isset(helper_base::$elasticsearch_location_collation_records_permission) ? helper_base::$elasticsearch_location_collation_records_permission : 'access iform'),
+  ];
   $form['api_keys'] = array(
     '#type' => 'fieldset',
     '#title' => t('API Keys')
@@ -428,6 +505,12 @@ function indicia_configuration_form_submit($form, &$form_state) {
   variable_set('indicia_website_id', $form_state['values']['indicia_website_id']);
   if (!empty($form_state['values']['indicia_password']))
     variable_set('indicia_password', $form_state['values']['indicia_password']);
+  variable_set('indicia_elasticsearch_endpoint', $form_state['values']['elasticsearch_endpoint']);
+  variable_set('indicia_elasticsearch_user', $form_state['values']['elasticsearch_user']);
+  variable_set('indicia_elasticsearch_secret', $form_state['values']['elasticsearch_secret']);
+  variable_set('indicia_elasticsearch_all_records_permission', $form_state['values']['elasticsearch_all_records_permission']);
+  variable_set('indicia_elasticsearch_my_records_permission', $form_state['values']['elasticsearch_my_records_permission']);
+  variable_set('indicia_elasticsearch_location_collation_records_permission', $form_state['values']['elasticsearch_location_collaction_records_permission']);
   variable_set('indicia_google_api_key', $form_state['values']['indicia_google_api_key']);
   variable_set('indicia_google_maps_api_key', $form_state['values']['indicia_google_maps_api_key']);
   variable_set('indicia_bing_api_key', $form_state['values']['indicia_bing_api_key']);
