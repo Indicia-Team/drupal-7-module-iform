@@ -165,7 +165,7 @@ TXT;
   ];
   $form['esproxy']['elasticsearch_location_collation_records_permission'] = [
     '#type' => 'textfield',
-    '#title' => 'Elasticsearch location collaction records permission',
+    '#title' => 'Elasticsearch location collation records permission',
     '#description' => t('Permission required to access records in a collation area (e.g. Local Record Centre ' .
       'boundary) via this connection. If the connection only provides access to publically visible data then leave ' .
       'as "access iform"'),
@@ -510,7 +510,7 @@ function indicia_configuration_form_submit($form, &$form_state) {
   variable_set('indicia_elasticsearch_secret', $form_state['values']['elasticsearch_secret']);
   variable_set('indicia_elasticsearch_all_records_permission', $form_state['values']['elasticsearch_all_records_permission']);
   variable_set('indicia_elasticsearch_my_records_permission', $form_state['values']['elasticsearch_my_records_permission']);
-  variable_set('indicia_elasticsearch_location_collation_records_permission', $form_state['values']['elasticsearch_location_collaction_records_permission']);
+  variable_set('indicia_elasticsearch_location_collation_records_permission', $form_state['values']['elasticsearch_location_collation_records_permission']);
   variable_set('indicia_google_api_key', $form_state['values']['indicia_google_api_key']);
   variable_set('indicia_google_maps_api_key', $form_state['values']['indicia_google_maps_api_key']);
   variable_set('indicia_bing_api_key', $form_state['values']['indicia_bing_api_key']);
