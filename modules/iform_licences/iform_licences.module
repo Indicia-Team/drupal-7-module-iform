@@ -24,6 +24,7 @@ function iform_licences_variable_info($options) {
 }
 
 function iform_licences_form_alter(&$form, &$form_state, $form_id) {
+  iform_load_helpers(array('data_entry_helper'));
   if (($form_id === 'user_profile_form' || $form_id === 'user_register_form')) {
     $conn = iform_get_connection_details(NULL);
     $readAuth = data_entry_helper::get_read_auth($conn['website_id'], $conn['password']);
@@ -143,4 +144,27 @@ function iform_licences_form_submit($form, &$form_state) {
     }
   }
 
+}
+
+function iform_licences_user_login (&$edit, $account) {
+
+  if (user_is_logged_in()) {
+
+    iform_load_helpers(array('data_entry_helper'));
+    //require_once iform_client_helpers_path() . 'data_entry_helper.php';
+    $readAuth=data_entry_helper::get_read_auth(variable_get('indicia_website_id',''), variable_get('indicia_password',''));
+    $indiciaUserId = $account->field_indicia_user_id[LANGUAGE_NONE]['0']['value'];
+    $current = data_entry_helper::get_population_data(array(
+      'table' => 'users_website',
+      'extraParams' => $readAuth + array(
+          'user_id' => $indiciaUserId,
+          'columns' => 'media_licence_id'
+        ),
+      'caching' => FALSE,
+    ));
+    $currentMediaLicenceId = $current[0]['media_licence_id'];
+    if (!isset($currentMediaLicenceId)) {
+      drupal_set_message(t('You <b>HAVE NOT</b> specified a media license'));
+    }
+  }
 }
