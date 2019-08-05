@@ -1013,6 +1013,11 @@ function handle_resources() {
     }
   }
   data_entry_helper::setup_jquery_validation_js();
+  $script = data_entry_helper::getIndiciaData();
+  // IndiciaData doesn't go inside closure (so set up before docReady)
+  if (!empty($script)) {
+    drupal_add_js($script, 'inline');
+  }
   $script = data_entry_helper::get_scripts(data_entry_helper::$javascript, data_entry_helper::$late_javascript, data_entry_helper::$onload_javascript);
   if (!empty($script))
     drupal_add_js(iform_js_closure($script), 'inline');
