@@ -27,11 +27,11 @@ function iform_licences_form_alter(&$form, &$form_state, $form_id) {
   if (($form_id === 'user_profile_form' || $form_id === 'user_register_form')) {
     $conn = iform_get_connection_details(NULL);
     $readAuth = data_entry_helper::get_read_auth($conn['website_id'], $conn['password']);
-    $licences = data_entry_helper::get_population_data(array(
+    drupal_set_message(microtime(TRUE));
+    $licences = data_entry_helper::get_population_data([
       'table' => 'licence',
       'extraParams' => $readAuth,
-      'caching' => FALSE,
-    ));
+    ]);
     $licencesApplyTo = explode('+', variable_get('iform_licences_mode', 'media'));
     if (count($licences)) {
       $indiciaUserId = hostsite_get_user_field('indicia_user_id');
@@ -41,15 +41,15 @@ function iform_licences_form_alter(&$form, &$form_state, $form_id) {
         $current = data_entry_helper::get_population_data(array(
           'table' => 'users_website',
           'extraParams' => $readAuth + array(
-              'user_id' => $indiciaUserId,
-              'columns' => 'licence_id,media_licence_id'
-            ),
+            'user_id' => $indiciaUserId,
+            'columns' => 'licence_id,media_licence_id',
+          ),
           'caching' => FALSE,
         ));
         $currentLicenceId = $current[0]['licence_id'];
         $currentMediaLicenceId = $current[0]['media_licence_id'];
       }
-      $options = array();
+      $options = [];
       foreach ($licences as $licence) {
         $options[$licence['id']] = "$licence[code]: $licence[title]";
       }
