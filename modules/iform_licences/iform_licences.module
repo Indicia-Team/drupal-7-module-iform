@@ -27,7 +27,6 @@ function iform_licences_form_alter(&$form, &$form_state, $form_id) {
   if (($form_id === 'user_profile_form' || $form_id === 'user_register_form')) {
     $conn = iform_get_connection_details(NULL);
     $readAuth = data_entry_helper::get_read_auth($conn['website_id'], $conn['password']);
-    drupal_set_message(microtime(TRUE));
     $licences = data_entry_helper::get_population_data([
       'table' => 'licence',
       'extraParams' => $readAuth,
