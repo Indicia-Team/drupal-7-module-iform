@@ -455,6 +455,12 @@ function iform_menu() {
     'access arguments' => array('access iform'),
     'type' => MENU_CALLBACK,
   );
+  // Declare a callback for ajax dynamic attribute proxy requests.
+  $items['iform/dynamicattrsproxy'] = array(
+    'page callback' => 'iform_dynamic_attrs_proxy_callback',
+    'access arguments' => array('access iform'),
+    'type' => MENU_CALLBACK,
+  );
   // Declare a registration path for public groups/activities.
   $items['join'] = array(
     'file' => 'iform.groups.inc',
@@ -559,6 +565,11 @@ function iform_esproxy_callback($method, $nid = NULL) {
   catch (ElasticsearchProxyAbort $e) {
     // Nothing to do.
   }
+}
+
+function iform_dynamic_attrs_proxy_callback($method) {
+  require_once 'client_helpers/DynamicAttrsProxyHelper.php';
+  DynamicAttrsProxyHelper::callMethod($method);
 }
 
 /**
@@ -1013,6 +1024,11 @@ function handle_resources() {
     }
   }
   data_entry_helper::setup_jquery_validation_js();
+  $script = data_entry_helper::getIndiciaData();
+  // IndiciaData doesn't go inside closure (so set up before docReady)
+  if (!empty($script)) {
+    drupal_add_js($script, 'inline');
+  }
   $script = data_entry_helper::get_scripts(data_entry_helper::$javascript, data_entry_helper::$late_javascript, data_entry_helper::$onload_javascript);
   if (!empty($script))
     drupal_add_js(iform_js_closure($script), 'inline');
