@@ -69,7 +69,7 @@ function iform_licences_form_alter(&$form, &$form_state, $form_id) {
           }
           else {
             $description .= strtoupper(
-              t('This licence will also be applied to all your previously entered records on @site.',
+              t('This licence will also be applied to all the @label you have previously uploaded to @site.',
               [
                 '@label' => $label,
                 '@site' => variable_get('site_name', 'this system'),
@@ -163,7 +163,7 @@ function iform_licences_user_login (&$edit, $account) {
     ));
     $currentMediaLicenceId = $current[0]['media_licence_id'];
     if (!isset($currentMediaLicenceId)) {
-      drupal_set_message(t('You have not yet specified a media licence yet. This limits to usefulness of your images. To set a licence, edit your <a href="user">profile page</a>, and select an option.'));
+      drupal_set_message(t('You have not yet specified a media licence yet. This limits the usefulness of your images. To set a licence, edit your <a href="user">profile page</a>, and select an option.'));
     }
   }
 }
