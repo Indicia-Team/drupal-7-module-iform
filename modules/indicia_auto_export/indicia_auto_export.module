@@ -263,7 +263,7 @@ function indicia_auto_export_cron() {
     ->propertyCondition('type', 'indicia_auto_export')
     ->fieldCondition('field_indicia_ae_due_date', 'value', NULL, 'IS NOT NULL')
     ->fieldCondition('field_indicia_ae_due_date', 'value', format_date(strtotime('now'), 'custom', 'Y-m-d H:i:s', 'UTC'), '<')
-    ->fieldCondition('field_indicia_ae_status', 'value', 'queued', '!=')
+    ->fieldCondition('field_indicia_ae_status', 'value', 'waiting', '=')
     ->fieldOrderBy('field_indicia_ae_due_date', 'value', 'DESC')
     ->range(0, 5);
   $result = $query->execute();
