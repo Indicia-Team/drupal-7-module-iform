@@ -163,7 +163,8 @@ function iform_licences_user_login (&$edit, $account) {
     ));
     $currentMediaLicenceId = $current[0]['media_licence_id'];
     if (!isset($currentMediaLicenceId)) {
-      drupal_set_message(t('You have not yet specified a media licence. This limits the usefulness of your images. <a href="user/@userid/edit#licenceopts">To set a licence, edit your profile page, and select an option.</a>', ['@userid' => $user->uid]));
+      $link = url('user/' . $user->uid . '/edit', ['fragment' => 'licenceopts']);
+      drupal_set_message(t('You have not yet specified a media licence. This limits the usefulness of your images. <a href="@link">To set a licence, edit your profile page, and select an option.</a>', ['@link' => $link]));
     }
   }
 }
