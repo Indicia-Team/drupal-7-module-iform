@@ -111,6 +111,18 @@ TXT;
   $form['esproxy']['instructions'] = [
     '#markup' => '<p>' . t($instruct) . '</p>'
   ];
+  $form['esproxy']['elasticsearch_version'] = [
+    '#type' => 'radios',
+    '#title' => t('Elasticsearch version'),
+    '#description' => t('Elasticsearch major version number.'),
+    '#options' => [
+      '6' => '6.x',
+      '7' => '7.x',
+    ],
+    '#required' => TRUE,
+    '#default_value' => variable_get('indicia_elasticsearch_version',
+        isset(helper_base::$indicia_elasticsearch_version) ? helper_base::$indicia_elasticsearch_version : '6'),
+  ];
   $form['esproxy']['elasticsearch_endpoint'] = [
     '#type' => 'textfield',
     '#title' => t('Elasticsearch endpoint'),
@@ -503,8 +515,10 @@ function indicia_configuration_form_submit($form, &$form_state) {
   variable_set('indicia_max_warehouse_url_length', $form_state['values']['indicia_max_warehouse_url_length']);
   variable_set('indicia_allow_connection_override', $form_state['values']['indicia_allow_connection_override']);
   variable_set('indicia_website_id', $form_state['values']['indicia_website_id']);
-  if (!empty($form_state['values']['indicia_password']))
+  if (!empty($form_state['values']['indicia_password'])) {
     variable_set('indicia_password', $form_state['values']['indicia_password']);
+  }
+  variable_set('indicia_elasticsearch_version', $form_state['values']['elasticsearch_version']);
   variable_set('indicia_elasticsearch_endpoint', $form_state['values']['elasticsearch_endpoint']);
   variable_set('indicia_elasticsearch_user', $form_state['values']['elasticsearch_user']);
   variable_set('indicia_elasticsearch_secret', $form_state['values']['elasticsearch_secret']);
