@@ -80,6 +80,7 @@ function iform_uninstall() {
   variable_del('indicia_base_url');
   variable_del('indicia_geoserver_url');
   variable_del('indicia_max_warehouse_url_length');
+  variable_del('indicia_elasticsearch_version');
   variable_del('indicia_elasticsearch_endpoint');
   variable_del('indicia_elasticsearch_user');
   variable_del('indicia_elasticsearch_secret');

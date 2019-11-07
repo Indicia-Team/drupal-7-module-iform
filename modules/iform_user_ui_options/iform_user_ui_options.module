@@ -141,6 +141,15 @@ indiciaData.basemapLayersOverride = true;
 
 JS;
             }
+            if ($param == "georefDriver") {
+              // If georefDriver is set at this point, then it has been set in
+              // a JSON config file to override the georeferencing options available on 
+              // iForms. Set a JS variable so that the georeferencer selector can
+              // be disabled.
+              data_entry_helper::$javascript .= <<<JS
+indiciaData.georeferencerOverride = true;
+JS;
+            }
           }
           else {
             // A form structure control property override. Store it for later,

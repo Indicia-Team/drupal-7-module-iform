@@ -699,6 +699,9 @@ function iform_settings() {
  * @return unknown_type
  */
 function iform_view($node, $view_mode) {
+  if ($view_mode == 'search_result') {
+    return $node;
+  }
   drupal_page_is_cacheable(FALSE);
   iform_load_helpers(array('data_entry_helper', 'form_helper'), empty($node->params['base_url']) ? '' : $node->params['base_url']);
   if (iform_check_needs_review($node)) {
@@ -1686,6 +1689,7 @@ function hostsite_mime_header_encode($string) {
  */
 function hostsite_get_es_config($nid) {
   $paramNames = [
+    'version',
     'endpoint',
     'user',
     'secret',
@@ -1694,12 +1698,18 @@ function hostsite_get_es_config($nid) {
     'my_records_permission',
     'location_collation_records_permission'
   ];
+  $defaults = [
+    'version' => '6',
+  ];
   $esParams = [];
   if ($nid) {
     $nodeParams = hostsite_get_node_field_value($nid, 'params');
   }
   foreach ($paramNames as $name) {
     $esParams[$name] = variable_get("indicia_elasticsearch_$name");
+    if (!$esParams[$name] === NULL && isset($defaults[$name])) {
+      $esParams[$name] = $defaults[$name];
+    }
     // Allow page level override.
     if ($nid) {
       $esParams[$name] = !empty($nodeParams[$name])
