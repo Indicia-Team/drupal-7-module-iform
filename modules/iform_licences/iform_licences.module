@@ -57,7 +57,7 @@ function iform_licences_form_alter(&$form, &$form_state, $form_id) {
         $thisLicenceId = $licenceFor === 'records' ? $currentLicenceId : $currentMediaLicenceId;
         $description = t('Select the licence to apply to your @label.', ['@label' => $label]) . ' ';
         // For media only, add some text to recommend CC0 and avoiding commercially valuable images
-        $description .= $licenceFor === 'records' ? '' : t('<b>We strongly recommend selecting a CC0 licence option as this helps support the use of your photos in research and conservation.</b> We do not recommend that commercially valuable photos are uploaded. ');
+        $description .= $licenceFor === 'records' ? '' : t('<b>If you are happy to select a CC0 or CC BY licence option, that will provide the best chance for your photos to be used in research and conservation.</b> ');
 
         if ($form_id === 'user_profile_form') {
           // Extra warning shown when changing existing setting.
