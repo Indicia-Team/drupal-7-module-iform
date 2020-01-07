@@ -282,8 +282,8 @@ TXT;
       'utm30ed50' => t('UTM 30N (ED50)'),
       'utm30wgs84' => t('UTM 30N (WGS84)'),
       '2169' => t('LUREF Luxembourg'),
-      '3006' => 'SWEREF99 TM / Swedish Transverse Mercator',
-      '3021' => 'RT90 2.5 gon v / Swedish Grid',
+      '3006' => t('SWEREF99 TM / Swedish Transverse Mercator'),
+      '3021' => t('RT90 2.5 gon v / Swedish Grid'),
   );
   $selected_systems = _indicia_form_values_from_sref_systems($systems);
   $form['map']['spatial_ref_systems']['spatial_ref_systems_list'] = array(
