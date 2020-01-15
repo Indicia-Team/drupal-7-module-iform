@@ -420,6 +420,8 @@ function iform_ajaxproxy_single_verify($writeTokens, $method = 'single_verify') 
   $request = data_entry_helper::$base_url . "index.php/services/data_utils/$method";
   $postargs = data_entry_helper::array_to_query_string(array_merge($_POST, $writeTokens), TRUE);
   $response = data_entry_helper::http_post($request, $postargs);
+  // Ensure correct content type.
+  drupal_add_http_header('Content-Type', 'text/plain; charset=utf-8');
   // The response should be in JSON if it worked.
   $output = json_decode($response['output'], TRUE);
   // If this is not JSON, it is an error, so just return it as is.
@@ -429,5 +431,4 @@ function iform_ajaxproxy_single_verify($writeTokens, $method = 'single_verify') 
   else {
     echo print_r($response, TRUE);
   }
-
 }
