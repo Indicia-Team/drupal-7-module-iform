@@ -1110,8 +1110,8 @@ $js
  */
 function iform_admin_tasks() {
   if (isset($_POST['clear_cache']) && $_POST['clear_cache']=='true') {
-    iform_load_helpers(array('data_entry_helper'));
-    data_entry_helper::clear_cache();
+    iform_load_helpers(['helper_base']);
+    helper_base::clear_cache();
     drupal_set_message(t('The Indicia cache has been cleared.'), 'status');
   }
   $r = '<form method="POST" action="' . url('admin/config/iform/admin') . '">';

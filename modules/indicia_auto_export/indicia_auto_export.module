@@ -336,6 +336,10 @@ function indicia_auto_export_run_export($exportNodeWrapper) {
       $dueOn = indicia_auto_export_calculate_due_date($exportNodeWrapper->field_indicia_ae_schedule->value(), 'now');
       $exportNodeWrapper->field_indicia_ae_due_date->set($dueOn);
     }
+    else {
+      // Manual, so clear due date.
+      $exportNodeWrapper->field_indicia_ae_due_date->set(NULL);
+    }
     $exportNodeWrapper->field_indicia_ae_status->set(
       empty($exportNodeWrapper->field_indicia_ae_due_date->value()) ? 'inactive' : 'waiting'
     );
