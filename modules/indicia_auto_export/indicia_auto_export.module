@@ -379,7 +379,6 @@ function indicia_auto_export_get_filter_params($filter, $readAuth) {
   $def = json_decode($filterData[0]['definition'], TRUE);
   $def = array_merge([
     // @todo Make this configurable.
-    'output_sref_systems' => 'OSGB,OSIE',
     'zero_abundance' => '0',
   ], $def);
   $filterCriteria = [];
