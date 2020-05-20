@@ -154,7 +154,7 @@ TXT;
       'Required if this connection will allow any update operations (e.g. for verification status changes), or can ' .
       'be provided as a setting on each individual page that allows updates.'),
     '#required' => FALSE,
-    '#default_value' => variable_get('elasticsearch_warehouse_prefix',
+    '#default_value' => variable_get('indicia_elasticsearch_warehouse_prefix',
         isset(helper_base::$elasticsearch_warehouse_prefix) ? helper_base::$elasticsearch_warehouse_prefix : ''),
   ];
   $form['esproxy']['elasticsearch_all_records_permission'] = [
@@ -524,6 +524,7 @@ function indicia_configuration_form_submit($form, &$form_state) {
   variable_set('indicia_elasticsearch_endpoint', $form_state['values']['elasticsearch_endpoint']);
   variable_set('indicia_elasticsearch_user', $form_state['values']['elasticsearch_user']);
   variable_set('indicia_elasticsearch_secret', $form_state['values']['elasticsearch_secret']);
+  variable_set('indicia_elasticsearch_warehouse_prefix', $form_state['values']['elasticsearch_warehouse_prefix']);
   variable_set('indicia_elasticsearch_all_records_permission', $form_state['values']['elasticsearch_all_records_permission']);
   variable_set('indicia_elasticsearch_my_records_permission', $form_state['values']['elasticsearch_my_records_permission']);
   variable_set('indicia_elasticsearch_location_collation_records_permission', $form_state['values']['elasticsearch_location_collation_records_permission']);
