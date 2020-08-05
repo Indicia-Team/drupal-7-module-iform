@@ -52,7 +52,6 @@ function iform_licences_form_alter(&$form, &$form_state, $form_id) {
       foreach ($licences as $licence) {
         $options[$licence['id']] = "$licence[code]: <a href='$licence[url_readable]'>$licence[title]</a>";
       }
-      dpm($licencesApplyTo);
       foreach ($licencesApplyTo as $licenceFor) {
         $label = $licenceFor === 'records' ? t('records') : t('photos and other media');
         $thisLicenceId = $licenceFor === 'records' ? $currentLicenceId : $currentMediaLicenceId;
