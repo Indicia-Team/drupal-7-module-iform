@@ -57,8 +57,7 @@ function iform_licences_form_alter(&$form, &$form_state, $form_id) {
         $thisLicenceId = $licenceFor === 'records' ? $currentLicenceId : $currentMediaLicenceId;
         $description = t('Select the licence to apply to your @label.', ['@label' => $label]) . ' ';
         // For media only, add some text to recommend CC0 and avoiding commercially valuable images
-        $description .= $licenceFor === 'records' ? '' : t('<b>If you are happy to select a CC0 or CC BY licence option, that will provide the best chance for your photos to be used in research and conservation.</b> ');
-
+        $description .= $licenceFor === 'records' ? '' : t('If you are happy to select a CC0 or CC BY licence option, that will provide the best chance for your photos to be used in research and conservation. ');
         if ($form_id === 'user_profile_form') {
           // Extra warning shown when changing existing setting.
           if ($thisLicenceId) {
@@ -68,13 +67,22 @@ function iform_licences_form_alter(&$form, &$form_state, $form_id) {
             );
           }
           else {
-            $description .= strtoupper(
+            $description .= '<b>' . strtoupper(
               t('This licence will also be applied to all the @label you have previously uploaded to @site.',
               [
                 '@label' => $label,
                 '@site' => variable_get('site_name', 'this system'),
               ]
-            ));
+            )) . '</b>';
+            if ($licenceFor === 'media') {
+              $description .= strtoupper(
+                t(' If you have many thousands of images, it may take a few minutes to apply.',
+                [
+                  '@label' => $label,
+                  '@site' => variable_get('site_name', 'this system'),
+                ]
+              ));
+            }
           }
         }
         $form["field_iform_licence_$licenceFor"] = array(
