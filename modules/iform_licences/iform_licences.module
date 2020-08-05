@@ -52,12 +52,15 @@ function iform_licences_form_alter(&$form, &$form_state, $form_id) {
       foreach ($licences as $licence) {
         $options[$licence['id']] = "$licence[code]: <a href='$licence[url_readable]'>$licence[title]</a>";
       }
+      dpm($licencesApplyTo);
       foreach ($licencesApplyTo as $licenceFor) {
         $label = $licenceFor === 'records' ? t('records') : t('photos and other media');
         $thisLicenceId = $licenceFor === 'records' ? $currentLicenceId : $currentMediaLicenceId;
         $description = t('Select the licence to apply to your @label.', ['@label' => $label]) . ' ';
         // For media only, add some text to recommend CC0 and avoiding commercially valuable images
-        $description .= $licenceFor === 'records' ? '' : t('If you are happy to select a CC0 or CC BY licence option, that will provide the best chance for your photos to be used in research and conservation. ');
+        if ($licenceFor !== 'records') {
+          $description .=  t('If you are happy to select a CC0 or CC BY licence option, that will provide the best chance for your photos to be used in research and conservation. ');
+        }
         if ($form_id === 'user_profile_form') {
           // Extra warning shown when changing existing setting.
           if ($thisLicenceId) {
