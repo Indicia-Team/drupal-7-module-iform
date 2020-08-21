@@ -92,7 +92,7 @@ function iform_licences_form_alter(&$form, &$form_state, $form_id) {
           '#title' => t('<span id="licenceopts">Licence for your @label</span>', ['@label' => $label]),
           '#options' => $options,
           '#description' => $description,
-          '#required' => TRUE,
+          '#required' => $form_id === 'user_register_form' ? TRUE: FALSE,
           '#default_value' => $thisLicenceId,
         );
       }
