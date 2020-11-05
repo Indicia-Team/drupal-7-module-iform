@@ -1602,6 +1602,19 @@ function hostsite_get_url($path, $params = FALSE, $fragment = FALSE, $absolute =
 }
 
 /**
+ * Retrieve the path alias for a node.
+ *
+ * @param int $nid
+ *   Node ID.
+ *
+ * @return string
+ *   Path alias string.
+ */
+function hostsite_get_alias($nid) {
+  return drupal_lookup_path('alias', "node/$nid") ? drupal_lookup_path('alias', "node/$nid") : "node/$nid";
+}
+
+/**
  * Retrieves the path for the current page.
  * @return string The current page path.
  */
