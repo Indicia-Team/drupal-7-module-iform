@@ -1726,7 +1726,8 @@ function hostsite_get_es_config($nid) {
     'warehouse_prefix',
     'all_records_permission',
     'my_records_permission',
-    'location_collation_records_permission'
+    'location_collation_records_permission',
+    'auth_method',
   ];
   $defaults = [
     'version' => '6',
