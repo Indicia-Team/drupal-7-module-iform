@@ -194,8 +194,9 @@ function iform_show_group_join_success($group, $auth, $alreadyAMember=false, $gr
       t('You can access the following pages for the @group', array('@group' => iform_readable_group_title($group))) .
       ':</p>';
   $r .= '<ul>';
-  if (!empty($group_home_path))
-    $r .= '<li><a href="'.hostsite_get_url($group_home_path, array('group_id'=>$group['id'], 'implicit'=>$group['implicit_record_inclusion'])).'">'.lang::get("Visit the $group[title] home page").'<a></li>';
+  if (!empty($group_home_path)) {
+    $r .= '<li><a href="'.hostsite_get_url($group_home_path, array('group_id'=>$group['id'], 'implicit'=>$group['implicit_record_inclusion'])).'">'.lang::get("Visit the $group[title] home page").'</a></li>';
+  }
   foreach ($pageData as $page) {
     $class = preg_replace('/[^a-zA-Z0-9]/', '-', strtolower($page['path']));
     $r .= '<li class="' . $class . '"><a class="button" href="' . hostsite_get_url($page['path'], array(
@@ -203,8 +204,9 @@ function iform_show_group_join_success($group, $auth, $alreadyAMember=false, $gr
         'implicit' => $group['implicit_record_inclusion']
       )) . '">' . t($page['caption']) . '</a></li>';
   }
-  if (!empty($groups_list_path))
-    $r .= '<li><a href="'.hostsite_get_url($groups_list_path).'">' . t("Return to your recording groups list") . '<a></li>';
+  if (!empty($groups_list_path)) {
+    $r .= '<li><a href="'.hostsite_get_url($groups_list_path).'">' . t("Return to your recording groups list") . '</a></li>';
+  }
   $r .= '</ul></div>';
   return $r;
 }
