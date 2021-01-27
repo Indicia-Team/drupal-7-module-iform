@@ -149,7 +149,7 @@ function iform_ajaxproxy_proxy() {
   else {
     switch ($index) {
       case "sample":
-        $model = data_entry_helper::wrap_with_attrs($_POST, 'sample');
+        $model = submission_builder::wrap_with_images($_POST, 'sample');
         break;
 
       case "location":
@@ -160,7 +160,7 @@ function iform_ajaxproxy_proxy() {
         if (array_key_exists('locations_website:website_id', $_POST)) {
           $structure['subModels']['locations_website'] = array('fk' => 'location_id');
         }
-        $model = data_entry_helper::build_submission($_POST, $structure);
+        $model = submission_builder::build_submission($_POST, $structure);
         break;
 
       case "loc-sample":
@@ -173,7 +173,7 @@ function iform_ajaxproxy_proxy() {
         if (array_key_exists('locations_website:website_id', $_POST)) {
           $structure['subModels']['locations_website'] = array('fk' => 'location_id');
         }
-        $model = data_entry_helper::build_submission($_POST, $structure);
+        $model = submission_builder::build_submission($_POST, $structure);
         break;
 
       case "loc-smp-occ":
@@ -186,7 +186,7 @@ function iform_ajaxproxy_proxy() {
               'location' => array('fk' => 'location_id')
           ),
         );
-        $model = data_entry_helper::build_submission($_POST, $structure);
+        $model = submission_builder::build_submission($_POST, $structure);
         if (array_key_exists('locations_website:website_id', $_POST)) {
           if (isset($model['superModels'][0]['model']['subModels'])) {
             $model['superModels'][0]['model']['subModels'] = array();
@@ -205,7 +205,7 @@ function iform_ajaxproxy_proxy() {
           if (substr($key, 0, 14) === 'determination:') {
             $model['subModels'][0]['model']['subModels'][] = array(
             'fkId' => 'occurrence_id',
-            'model' => data_entry_helper::wrap($_POST, 'determination', 'determination')
+            'model' => submission_builder::wrap($_POST, 'determination', 'determination')
             );
             break;
           }
@@ -219,7 +219,7 @@ function iform_ajaxproxy_proxy() {
             'occurrence' => array('fk' => 'sample_id'),
           ),
         );
-        $model = data_entry_helper::build_submission($_POST, $structure);
+        $model = submission_builder::build_submission($_POST, $structure);
         break;
 
       case "media":
@@ -324,65 +324,65 @@ function iform_ajaxproxy_proxy() {
             break;
           }
         }
-        $model = data_entry_helper::build_submission($_POST, $structure);
+        $model = submission_builder::build_submission($_POST, $structure);
         break;
 
       case "occ-comment":
-        $model = data_entry_helper::wrap($_POST, 'occurrence_comment');
+        $model = submission_builder::wrap($_POST, 'occurrence_comment');
         break;
 
       case "smp-comment":
-        $model = data_entry_helper::wrap($_POST, 'sample_comment');
+        $model = submission_builder::wrap($_POST, 'sample_comment');
         break;
 
       case "determination":
-        $model = data_entry_helper::wrap($_POST, 'determination');
+        $model = submission_builder::wrap($_POST, 'determination');
         break;
 
       case "notification":
-        $model = data_entry_helper::wrap($_POST, 'notification');
+        $model = submission_builder::wrap($_POST, 'notification');
         break;
 
       case "user-trust":
         $structure = array('model' => 'user_trust');
-        $model = data_entry_helper::build_submission($_POST, $structure);
+        $model = submission_builder::build_submission($_POST, $structure);
         break;
 
       case "sample_attribute_value":
-        $model = data_entry_helper::wrap($_POST, 'sample_attribute_value');
+        $model = submission_builder::wrap($_POST, 'sample_attribute_value');
         break;
 
       case "location_attribute_value":
-        $model = data_entry_helper::wrap($_POST, 'location_attribute_value');
+        $model = submission_builder::wrap($_POST, 'location_attribute_value');
         break;
 
       case "person_attribute_value":
-        $model = data_entry_helper::wrap($_POST, 'person_attribute_value');
+        $model = submission_builder::wrap($_POST, 'person_attribute_value');
         break;
 
       case "filter":
-        $model = data_entry_helper::wrap($_POST, 'filter');
+        $model = submission_builder::wrap($_POST, 'filter');
         break;
 
       case "filter_and_user":
         $structure = array('model' => 'filter', 'subModels' => array('filters_user' => array('fk' => 'filter_id')));
-        $model = data_entry_helper::build_submission($_POST, $structure);
+        $model = submission_builder::build_submission($_POST, $structure);
         break;
 
       case "groups_location":
-        $model = data_entry_helper::wrap($_POST, 'groups_location');
+        $model = submission_builder::wrap($_POST, 'groups_location');
         break;
 
       case "groups_user":
-        $model = data_entry_helper::wrap($_POST, 'groups_user');
+        $model = submission_builder::wrap($_POST, 'groups_user');
         break;
 
       case "scratchpad_list":
-        $model = data_entry_helper::wrap($_POST, 'scratchpad_list');
+        $model = submission_builder::wrap($_POST, 'scratchpad_list');
         break;
 
       case "comment_quick_reply_page_auth":
-        $model = data_entry_helper::wrap($_POST, 'comment_quick_reply_page_auth');
+        $model = submission_builder::wrap($_POST, 'comment_quick_reply_page_auth');
         break;
 
       default:
