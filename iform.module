@@ -656,27 +656,36 @@ function iform_features_review() {
 }
 
 /**
- * Utility method that gets the base_url, website_id and password appropriate to connect
- * a given node to the warehouse.
- * @param mixed $node A node object or nid.
- * @return array Connection details, including website_id and password. Also
- * contains a boolean using_drupal_vars which is true if the site-wide
- * configuration is being used.
+ * Return warehouse connection details.
+ *
+ * Utility method that gets the base_url, website_id and password appropriate
+ * to connect a given node to the warehouse.
+ *
+ * @param mixed $node
+ *   A node object or nid.
+ *
+ * @return array
+ *   Connection details, including website_id and password. Also contains a
+ *   boolean using_drupal_vars which is true if the site-wide configuration is
+ *   being used.
  */
 function iform_get_connection_details($node) {
   $r = array();
   // convert a nid to a node
   if (!is_object($node))
     $node = node_load($node);
-  $r['base_url']=variable_get('indicia_base_url', '');
-  $r['website_id']=variable_get('indicia_website_id', '');
-  $r['password']=variable_get('indicia_password', '');
-  if (empty($r['base_url']) || variable_get('indicia_allow_connection_override', FALSE))
+  $r['base_url'] = variable_get('indicia_base_url', '');
+  $r['website_id'] = variable_get('indicia_website_id', '');
+  $r['password'] = variable_get('indicia_password', '');
+  if (empty($r['base_url']) || variable_get('indicia_allow_connection_override', FALSE)) {
     $r['base_url'] = isset($node->params['base_url']) ? $node->params['base_url'] : $r['base_url'];
-  if (empty($r['website_id']) || variable_get('indicia_allow_connection_override', FALSE))
+  }
+  if (empty($r['website_id']) || variable_get('indicia_allow_connection_override', FALSE)) {
     $r['website_id'] = isset($node->params['website_id']) ? $node->params['website_id'] : $r['website_id'];
-  if (empty($r['password']) || variable_get('indicia_allow_connection_override', FALSE))
+  }
+  if (empty($r['password']) || variable_get('indicia_allow_connection_override', FALSE)) {
     $r['password'] = isset($node->params['password']) ? $node->params['password'] : $r['password'];
+  }
   return $r;
 }
 
