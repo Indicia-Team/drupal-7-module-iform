@@ -1405,6 +1405,32 @@ function hostsite_get_user_field($field, $default = false, $array = false, $uid 
     return $default;
 }
 
+
+/**
+ * Finds a Drupal user by a field value.
+ *
+ * E.g. search by indicia_user_id.
+ *
+ * @param string $field
+ *   Name of the field to search.
+ * @param string $value
+ *   Value to search for.
+ *
+ * @return array
+ *   List of matching user IDs.
+ */
+function hostsite_find_cms_user_by_field_value($field, $value) {
+  $fieldname = (substr($field, 0, 6) === 'field_' ? '' : 'field_') . $field;
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'user')
+    ->fieldCondition($fieldname, 'value', $value, '=');
+  $result = $query->execute();
+  if ($result) {
+    return array_keys($result['user']);
+  }
+  return [];
+}
+
 /**
  * Function that allows Indicia code to hook into the Drupal user profile to set a field value, without
  * introducing a Drupal code dependency.
@@ -1787,6 +1813,23 @@ function hostsite_get_es_config($nid) {
     'es' => $esParams,
     'indicia' => $indiciaParams,
   ];
+}
+
+/**
+ * Renders a Drupal form.
+ *
+ * @param string $formId
+ *   Form identifier.
+ *
+ * @param array $state
+ *   Form state key/value pairs.
+ *
+ * @return string
+ *   Form HTML.
+ */
+function hostsite_render_form($formId, array $state) {
+  $form = drupal_build_form($formId, $state);
+  return drupal_render($form);
 }
 
 /**
