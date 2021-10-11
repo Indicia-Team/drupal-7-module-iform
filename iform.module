@@ -1762,6 +1762,7 @@ function hostsite_get_es_config($nid) {
   $paramNames = [
     'version',
     'endpoint',
+    'alternative_endpoints',
     'user',
     'secret',
     'warehouse_prefix',
@@ -2048,5 +2049,18 @@ function iform_metatag_metatags_view_alter(&$output, $instance, $options) {
       unset($output['article:modified_time']);
     }
 
+  }
+}
+
+/**
+ * Implement preprocess_status_messages.
+ * Displays message to screen when user has training mode engaged.
+ * @param $variables
+ */
+function iform_preprocess_status_messages(&$variables) {
+  if (hostsite_get_user_field('training', false)) {
+     $message = t('You are in training mode. Records you add will be for '
+                 . 'training purposes only and you can only see training records.');
+     drupal_set_message($message, 'warning');
   }
 }
