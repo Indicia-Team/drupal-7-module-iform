@@ -1817,6 +1817,16 @@ function hostsite_get_es_config($nid) {
 }
 
 /**
+ * Retrieve the current Drupal version.
+ *
+ * @return string
+ *   The Drupal version value.
+ */
+function hostsite_get_cms_version() {
+  return VERSION;
+}
+
+/**
  * Renders a Drupal form.
  *
  * @param string $formId
