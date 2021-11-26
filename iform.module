@@ -1025,7 +1025,7 @@ function handle_resources() {
           if (strpos($j, 'fancybox.') !== FALSE)
             data_entry_helper::$javascript .= "$('a.fancybox').fancybox({ afterLoad: indiciaFns.afterFancyboxLoad });\n";
           // We must not add jQuery twice. So for this file, add Drupal's own version if not already done.
-          if (strcasecmp(substr($j, -9), 'jQuery.js')==0) {
+          if (strcasecmp(substr($j, -9), 'jQuery.js')==0 || strcasecmp(substr($j, -13), 'jQuery.min.js')==0) {
             // No need to load jquery.js in Drupal 7 as it loads automatically if there is any other JavaScript
           }
           elseif (preg_match('/jquery\-ui(\.custom)?\.min\.js$/', $j)) {
