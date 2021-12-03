@@ -1844,6 +1844,34 @@ function hostsite_render_form($formId, array $state) {
 }
 
 /**
+ * Set a non-essential cookie.
+ *
+ * Respects settings in EU Cookie Compliance module.
+ *
+ * @param string $cookie
+ *   Cookie name.
+ * @param string $value
+ *   Cookie value.
+ * @param int $expire
+ *   Optional expiry value.
+ */
+function hostsite_set_cookie($cookie, $value, $expire = NULL) {
+  // Respect the remembered_fields_optin control.
+  if (isset($_POST['cookie_optin']) && $_POST['cookie_optin'] === '0') {
+    return;
+  }
+  // Respect the EU Cookie Compliance module.
+  if (module_exists('eu_cookie_compliance')) {
+    if (!isset($_COOKIE['cookie-agreed']) || $_COOKIE['cookie-agreed'] === '0') {
+      return;
+    }
+  }
+  setcookie($cookie, $value, $expire);
+  // Cookies are only set when the page is loaded. So, fudge the cookie array.
+  $_COOKIE[$cookie] = $value;
+}
+
+/**
  * Returns a list of website IDs that this website is allowed use data for. This is defined by the agreement between the
  * 2 websites and depends on the exact task being performed.
  * @param array $readAuth Read authorisation tokens
