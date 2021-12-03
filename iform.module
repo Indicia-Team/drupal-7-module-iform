@@ -741,7 +741,10 @@ function iform_view($node, $view_mode) {
   // files folder.
   $filePath = variable_get('file_public_path', conf_path() . '/files');
   if (isset($node->iform) && $node->iform != -1) {
-    data_entry_helper::$javascript .= "indiciaData.nid = $node->nid;\n";
+    data_entry_helper::$indiciaData['nid'] = $node->nid;
+    if (module_exists('eu_cookie_compliance')) {
+      data_entry_helper::$indiciaData['cookieCompliance'] = 'eu_cookie_compliance';
+    }
     _iform_load_language_files($node);
     _iform_load_template_files($helperPath, $filePath, $node);
     $args = array('language' => $language->language);
