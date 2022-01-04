@@ -1521,22 +1521,35 @@ function hostsite_show_message($msg, $type='status') {
 
 /**
  * Set a breadcrumb trail in the host site.
- * @param array $breadcrumb An associative array where keys are untranslated breadcrumb
- * terms and values are the page to go to. The home page is automatically inserted at the
- * start and the current page at the end.
- * @param boolean $includeCurrentPage Set to true to add the current page title to the
- * end of the breadcrumb. This might be better handled by a global setting in the theme
- * where possible.
+ *
+ * @param array $breadcrumb
+ *   An associative array where keys are paths and values are untranslated
+ *   breadcrumb terms. The home page is automatically inserted at the start.
+ * @param boolean $includeCurrentPage
+ *   Set to true to add the current page title to the end of the breadcrumb.
+ *   This might be better handled by a global setting in the theme where
+ *   possible.
  */
-function hostsite_set_breadcrumb($breadcrumb, $includeCurrentPage=false) {
+function hostsite_set_breadcrumb($breadcrumb, $includeCurrentPage = FALSE) {
   // convert to Drupal style breadcrumb array
   $drupal_breadcrumb = array(l(lang::get('Home'),'<front>'));
-  foreach ($breadcrumb as $label => $path) {
+  foreach ($breadcrumb as $path => $label) {
+    foreach ($_GET as $key => $value) {
+      // GET parameters can be used as replacements.
+      $path = str_replace("#$key#", $value, $path);
+    }
     $drupal_breadcrumb[] = l(lang::get($label), $path);
   }
-  if ($includeCurrentPage)
-    // add current page
-    $drupal_breadcrumb[] = drupal_get_title();
+  if ($includeCurrentPage) {
+    // Add current page.
+    if (arg(0) == 'node' && is_numeric(arg(1))) {
+      $nid = arg(1);
+    }
+    else {
+      $nid = 0;
+    }
+    $drupal_breadcrumb[] = hostsite_get_page_title($nid);
+  }
   drupal_set_breadcrumb($drupal_breadcrumb);
 }
 
